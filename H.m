@@ -1,9 +1,9 @@
-function [ H_val ] = H( p_t, t, e, v, p_ind )
+function [ H_val ] = H( DT, density, p_ind )
 %H Summary of this function goes here
 %   Detailed explanation goes here
 
-    x_t = p_t(p_ind, 1);
-    v_t = p_t(p_ind, 2);
+    x_t = DT.Points(p_ind, 1);
+    v_t = DT.Points(p_ind, 2);
 
     dx = 1;     %meter
     dv = 1;   %meter/sec
@@ -13,13 +13,14 @@ function [ H_val ] = H( p_t, t, e, v, p_ind )
     V_max = 20;
     
     H1_sum_y = x_t:dx:x_t+epsilon_nut;
-    H1_sum_v_telda = min(p_t(:, 2)):dv:max(p_t(:, 2));
+    H1_sum_v_telda = 0:dv:max(DT.Points(:, 2));
     
     [H1_sum_y_grid, H1_sum_v_telda_grid] = meshgrid(H1_sum_y, H1_sum_v_telda);
     H1_integral_domain = [H1_sum_y_grid(:), H1_sum_v_telda_grid(:)];
     
-    vi = knnsearch(p_t, H1_integral_domain);
-    Vq = v(vi);
+    trig_ids = DT.pointLocation(H1_integral_domain);
+    density_grid = zeros(size(trig_ids));
+    density_grid(~isnan(trig_ids)) = density(trig_ids(~isnan(trig_ids)));
     
 %     H1 = 0;
 %     for y = H1_sum_y
@@ -39,10 +40,10 @@ function [ H_val ] = H( p_t, t, e, v, p_ind )
     parfor integral_point_index = 1:size(H1_integral_domain, 1)
         y = H1_integral_domain(integral_point_index, 1);
         v_telda = H1_integral_domain(integral_point_index, 2);        
-        H1(integral_point_index) = Vq(integral_point_index) * h(x_t - y, epsilon_nut) * (V(y - x_t, d_nut, V_max) - v_t);
+        H1(integral_point_index) = density_grid(integral_point_index) * h(x_t - y, epsilon_nut) * (V(y - x_t, d_nut, V_max) - v_t);
     end
     
-    H_val = sum(H1);
+    H_val = sum(H1) * dx * dv;
 
 
 
