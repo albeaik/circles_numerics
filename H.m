@@ -48,6 +48,7 @@ function [ H_val ] = H( p_t, t, e, v, p_ind )
 
 function [h_val] = h(x, epsilon_nut)
     h_val = exp(-1/( (epsilon_nut/2)^2 - (-x-epsilon_nut/2)^2 )) * ((-epsilon_nut < x) & (x < 0));
+    h_val(isnan(h_val)) = 0;
 
 
 function [V_val] = V(x, d_nut, V_max)
