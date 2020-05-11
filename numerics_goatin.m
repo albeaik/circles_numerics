@@ -9,3 +9,4 @@ v=dv.*(-nx-0.5:1:nx+0.5);
 
 lx=dt./dx;
 lv=dt./dv;
+hallo
