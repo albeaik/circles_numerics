@@ -11,13 +11,14 @@ lambdav=(t(2)-t(1))/(v(2)-v(1));
 Q(1,:,:)=1/2*ones(nx,nv);
 V=@(x) x;   %needs to be changed to the actual functions
 h=@(x) x;
+epsilon=4;
 theta=@(x,v) h(-x).*(V(x)-v).*(x<=epsilon).*(x>=0);
 epsilonx=1; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1;
-x1 = linspace(-20,20,nx);
-[X1,V]=meshgrid(x1,v);
+x1 = linspace(-20,20,2.*nx);
+[V,X1]=meshgrid(v,x1);
 Theta=theta(X1,V);
-W = zeros(nx,nv)
+W = zeros(nx,nv);
 
 for n=1:1:nt
             Q(n+1,2:nx-1,2:nv-1)=Q(n,2:nx-1,2:nv-1)-lambdax.*v(2:nv-1).*((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2)+epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
@@ -26,10 +27,10 @@ for n=1:1:nt
             for i=1:1:nx
                         for j=1:1:nv
                                     s = zeros(1,nv);
-                                    for l = -(nx-1):nx-1
-                                                s=s+Theta(i-l,j).*Q(n+1,l+nx,2:nv-1)
+                                    for l = -(nx-1):0
+                                                s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,2:nv-1);
                                    end
-                                    W(i,j) = sum(s)
+                                    W(i,j) = sum(s);
                         end
             end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
