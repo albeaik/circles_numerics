@@ -14,8 +14,10 @@ h=@(x) x;
 theta=@(x,v) h(-x).*(V(x)-v).*(x<=epsilon).*(x>=0);
 epsilonx=1; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1;
-[X,V]=meshgrid(x,v);
-Theta=theta(X,V);
+x1 = linspace(-20,20,nx);
+[X1,V]=meshgrid(x1,v);
+Theta=theta(X1,V);
+W = zeros(nx,nv)
 
 for n=1:1:nt
             Q(n+1,2:nx-1,2:nv-1)=Q(n,2:nx-1,2:nv-1)-lambdax.*v(2:nv-1).*((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2)+epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
@@ -23,10 +25,13 @@ for n=1:1:nt
             
             for i=1:1:nx
                         for j=1:1:nv
-                        W(i,j)=(x(2)-x(1)).*(v(2)-v(1))*(Theta(i,
+                                    s = zeros(1,nv);
+                                    for l = -(nx-1):nx-1
+                                                s=s+Theta(i-l,j).*Q(n+1,l+nx,2:nv-1)
+                                   end
+                                    W(i,j) = sum(s)
                         end
             end
-            
-            W=?????
+            W = (x(2)-x(1)).*(v(2)-v(1)).*W;
             Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-lambdav.*W(2:nx-1,2:nv-1).*(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,3:nv)) +epsilonv.*(-Q(n+1,2:nx-1,1:nv-2)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
 end
