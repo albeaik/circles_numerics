@@ -34,6 +34,7 @@ plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize'
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
 T = 5;          %end time: seconds
+remesh_cycle = 50;  %time steps
 
 DT_t = DT;
 DT_history{1} = DT_t;
@@ -68,10 +69,15 @@ for time = 0:dt:T
     end
     
     % remish
-    DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
-    DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
-    DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
-    density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+    if(mod(time/dt, remesh_cycle) == 0)
+        DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
+        DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
+        DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
+        density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+    else    %skip remishing
+        DT_tau_remished = DT_tau;
+        density_DT_tau_remished = density_tau;
+    end
     
     % prepare for next iteration
     t_index = t_index + 1;
@@ -103,7 +109,8 @@ xy_domain = [x_grid(:), y_grid(:)];
 
 i = 1;
 while(true)
-    pause(0.01)
+    pause(0.1)
+    i
     %vi = knnsearch(p_history(:, :, i), xy_domain);
     %Vq = v(vi);    
     
@@ -125,7 +132,7 @@ while(true)
     set(gca,'YDir','normal')
     title(['time - ', num2str(i/100)])
     
-    i = mod(i+1, size(DT_history, 2)) + 1;
+    i = mod(i+10, size(DT_history, 2));
 end
 
 
