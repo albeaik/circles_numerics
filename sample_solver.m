@@ -107,7 +107,7 @@ while(true)
     visualize_trig_trig( DT_history{i}, density_history{i} );
     title(['time - ', num2str(i/100)]);
     
-    i = mod(i+1, size(DT_history, 2));
+    i = mod(i+1, size(DT_history, 2) -1 ) + 1;
 end
 
 
