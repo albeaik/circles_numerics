@@ -88,6 +88,28 @@ for time = 0:dt:T
 end
 
 
+
+
+% raw visualizations ---------------------------------------------------------
+
+
+i = 1;
+while(true)
+    pause(0.1)
+    i
+
+    visualize_trig_trig( DT_history{i}, density_history{i} );
+    title(['time - ', num2str(i/100)]);
+    
+    i = mod(i+10, size(DT_history, 2));
+end
+
+
+
+
+
+
+
 % visualizations ---------------------------------------------------------
 dx = 0.1;     %meter
 dv = 0.1;     %meter/sec
