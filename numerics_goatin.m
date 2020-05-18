@@ -1,17 +1,18 @@
 nt=1e2;
 nx=1e3;
 nv=1e3;
+Vmax =20; % needed when define function Vf
 x=linspace(-10,10,nx);
-v=linspace(0,20,nv);
+v=linspace(0,Vmax,nv);
 t=linspace(0,10,nt);
 
 Q=zeros(nt+1,nx,nv);
 lambdax=(t(2)-t(1))/(x(2)-x(1));
 lambdav=(t(2)-t(1))/(v(2)-v(1));
 Q(1,:,:)=1/2*ones(nx,nv);
-V=@(x) x;   %needs to be changed to the actual functions
-h=@(x) x;
-epsilon=4;
+d0 = 1; % needed when define function Vf. Change later. 
+Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2)));  
+h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
 theta=@(x,v) h(-x).*(V(x)-v).*(x<=epsilon).*(x>=0);
 epsilonx=1; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1;
