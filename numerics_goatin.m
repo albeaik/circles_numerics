@@ -21,7 +21,9 @@ Theta=theta(X1,V);
 W = zeros(nx,nv);
 
 for n=1:1:nt
-            Q(n+1,2:nx-1,2:nv-1)=Q(n,2:nx-1,2:nv-1)-lambdax.*v(2:nv-1).*((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2)+epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
+            Q(n+1,2:nx-1,2:nv-1)=Q(n,2:nx-1,2:nv-1)-...
+            lambdax.*v(2:nv-1).*((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2)+...
+            epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
             n
             
             for i=1:1:nx
@@ -34,5 +36,7 @@ for n=1:1:nt
                         end
             end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
-            Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-lambdav.*W(2:nx-1,2:nv-1).*(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,3:nv)) +epsilonv.*(-Q(n+1,2:nx-1,1:nv-2)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
+            Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-...
+            lambdav.*W(2:nx-1,2:nv-1).*(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,3:nv)) +...
+            epsilonv.*(-Q(n+1,2:nx-1,1:nv-2)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
 end
