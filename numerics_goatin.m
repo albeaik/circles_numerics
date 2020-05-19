@@ -31,8 +31,8 @@ for n=1:1:nt
             %epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
             %n
             
-            for i=1:1:nx
-                        for j=1:1:nv
+            parfor i=1:1:nx
+                        parfor j=1:1:nv
                                     s = zeros(1,nv);
                                     for l = 1:nx
 %                                                s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,2:nv-1);
