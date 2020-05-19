@@ -36,7 +36,7 @@ for n=1:1:nt
                                     s = zeros(1,nv);
                                     for l = -nx:nx
 %                                                s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,2:nv-1);
-                                                 s=s+Theta(nx+i-l,j).*Q(n+1,l,1:nv); %Theta(1) corresponds in fact to -nx
+                                                 s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,1:nv);  %Theta(1) corresponds in fact to -nx
                                    end
                                     W(i,j) = sum(s);
                         end
