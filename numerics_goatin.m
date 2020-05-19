@@ -34,11 +34,11 @@ for n=1:1:nt
             for i=1:1:nx
                         for j=1:1:nv
                                     s = zeros(1,nv);
-                                    for l = -nx:nx
+                                    for l = 1:nx
 %                                                s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,2:nv-1);
-                                                 s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,1:nv);  %Theta(1) corresponds in fact to -nx
-                                   end
-                                    W(i,j) = sum(s);
+                                                 s=s+Theta(nx+i-l,j).*Q(n+1,l,1:nv);  %Theta(1) corresponds in fact to the position x=-20
+                                    end
+                                    W(i,j) = sum(sum(sum(s)));
                         end
             end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
