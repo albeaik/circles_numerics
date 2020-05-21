@@ -51,14 +51,14 @@ for time = 0:dt:T
     
     % simulate the characteristic equation
     DT_tau_points = DT_tau.Points;
-    parfor point_ind = 1:size(DT.Points, 1)
+    parfor point_ind = 1:size(DT_t.Points, 1)
         DT_tau_points(point_ind, :) = [DT_t.Points(point_ind, 1) + DT_t.Points(point_ind, 2) * dt, ...
-                                    DT_t.Points(point_ind, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density, point_ind) * dt];
+                                    DT_t.Points(point_ind, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, point_ind) * dt];
     end
     DT_tau.Points = DT_tau_points;
     
     % simulate density scaling
-    parfor trig_ind = 1:size(DT.ConnectivityList, 1)
+    parfor trig_ind = 1:size(DT_t.ConnectivityList, 1)
         trig_t = DT_t.ConnectivityList(trig_ind, :);
         trig_tau = DT_tau.ConnectivityList(trig_ind, :);
         
