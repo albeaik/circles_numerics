@@ -1,5 +1,6 @@
+
 clear all
-nt=1e3;
+nt=1e2;
 nx=1e2+1;
 nv=1e2;
 Vmax =20; % needed when define function Vf
@@ -37,19 +38,10 @@ for n=1:1:nt
                 lambdax.*reshape(V2(2:nx-1,2:nv-1).*reshape(((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2),nx-2,nv-2),1,nx-2,nv-2)-...
                 epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
      n
-            %Q(n+1,2:nx-1,2:nv-1)=Q(n,2:nx-1,2:nv-1)-...
-            %lambdax.*v(2:nv-1).*((Q(n,2:nx-1,2:nv-1)+Q(n,3:nx,2:nv-1))/2-(Q(n,1:nx-2,2:nv-1)+Q(n,2:nx-1,2:nv-1))/2)+...
-            %epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
-            %n
             
             parfor i=1:1:nx
                         for j=1:1:nv
-                                    s = zeros(1,nv);
-                                    for l = 1:nx
-%                                                s=s+Theta(nx+i-l,j).*Q(n+1,l+nx,2:nv-1);
-                                                 s=s+Theta(nx+i-l,j).*Q(n+1,l,1:nv);  %Theta(1) corresponds in fact to the position x=-20
-                                    end
-                                    W(i,j) = sum(sum(sum(s)));
+                                    W(i,j) = sum(sum(Theta(nx+i-(1:nx),j).*reshape(Q(n+1,1:nx,1:nv),nx,nv)));
                         end
             end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
@@ -59,8 +51,10 @@ for n=1:1:nt
             
          figure(1)
          surf(X,V,reshape(Q(n,:,:),nx,nv));
-         %zlim([0,1]);
+         zlim([0,1]);
          colorbar;
+         colormap(jet);
+         caxis([0 1]);
          view(0,90);
 
          drawnow;
@@ -68,3 +62,4 @@ for n=1:1:nt
            % lambdav.*W(2:nx-1,2:nv-1).*(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,1:nv-2)) +...
            % epsilonv.*(-Q(n+1,2:nx-1,1:nv-2)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
 end
+
