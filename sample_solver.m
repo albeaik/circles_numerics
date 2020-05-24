@@ -50,12 +50,8 @@ for time = 0:dt:T
     [DT_t_centroids, DT_t_areas] = GetDelaunayCentroids(DT_t);  %sorted by triangle id
     
     % simulate the characteristic equation
-    DT_tau_points = DT_tau.Points;
-    parfor point_ind = 1:size(DT_t.Points, 1)
-        DT_tau_points(point_ind, :) = [DT_t.Points(point_ind, 1) + DT_t.Points(point_ind, 2) * dt, ...
-                                    DT_t.Points(point_ind, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, point_ind) * dt];
-    end
-    DT_tau.Points = DT_tau_points;
+    DT_tau.Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
+                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t)' * dt];
     
     % simulate density scaling
     parfor trig_ind = 1:size(DT_t.ConnectivityList, 1)
