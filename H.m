@@ -3,7 +3,7 @@ function [ H_val ] = H( DT, DT_centroids, DT_areas, density, assume_fixed_DT )
 %                           iterations ==> this permits pre-computation of
 %                           integral domains and relevant matrices
     
-    global pre_computation_done H1_integral_domain areas_t_mtx centroids_x_t_mtx centroids_v_t_mtx DT_x_t_mtx DT_v_t_mtx
+    global pre_computation_done H1_integral_domain areas_t_mtx centroids_x_t_mtx centroids_v_t_mtx DT_x_t_mtx DT_v_t_mtx num_DT_points_t num_DT_trigs_t
     
     epsilon_nut = 2;
     d_nut = 2;
