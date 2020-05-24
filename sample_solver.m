@@ -51,7 +51,7 @@ for time = 0:dt:T
     
     % simulate the characteristic equation
     DT_tau.Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
-                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t)' * dt];
+                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, 1)' * dt];
     
     % simulate density scaling
     parfor trig_ind = 1:size(DT_t.ConnectivityList, 1)

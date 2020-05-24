@@ -1,29 +1,34 @@
-function [ H_val ] = H( DT, DT_centroids, DT_areas, density )
-%H Summary of this function goes here
-%   Detailed explanation goes here
+function [ H_val ] = H( DT, DT_centroids, DT_areas, density, assume_fixed_DT )
+% assume_fixed_DT ~= 0 ==> triangulation is assumed not changing between
+%                           iterations ==> this permits pre-computation of
+%                           integral domains and relevant matrices
+    
+    global pre_computation_done H1_integral_domain centroids_x_t_mtx centroids_v_t_mtx DT_x_t_mtx DT_v_t_mtx
     
     epsilon_nut = 2;
     d_nut = 2;
     V_max = 20;
     
-    
-    num_DT_points_t = size(DT.Points, 1);
-    num_DT_trigs_t = size(DT_centroids, 1);
-    
-    density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
+    if(assume_fixed_DT == 0 | isempty(pre_computation_done)) %cold start
+        num_DT_points_t = size(DT.Points, 1);
+        num_DT_trigs_t = size(DT_centroids, 1);
 
+        centroids_x_t_mtx = repelem(DT_centroids(:, 1), 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
+        centroids_v_t_mtx = repelem(DT_centroids(:, 2), 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
+
+        DT_x_t_mtx = repelem(DT.Points(:, 1)', num_DT_trigs_t, 1);                 %size = (num trigs, num characteristic samples)
+        DT_v_t_mtx = repelem(DT.Points(:, 2)', num_DT_trigs_t, 1);                 %size = (num trigs, num characteristic samples)
+
+        H1_integral_domain = ( ((DT_x_t_mtx < centroids_x_t_mtx) & (centroids_x_t_mtx < DT_x_t_mtx+epsilon_nut)) ) & ( ((0 < centroids_v_t_mtx) & (centroids_v_t_mtx < max(DT.Points(:, 2)))) );
+        
+        pre_computation_done = 1;
+    end
+        
+    density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
     areas_t_mtx = repelem(DT_areas, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
-    
-    centroids_x_t_mtx = repelem(DT_centroids(:, 1), 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
-    centroids_v_t_mtx = repelem(DT_centroids(:, 2), 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
-    
-    DT_x_t_mtx = repelem(DT.Points(:, 1)', num_DT_trigs_t, 1);                 %size = (num trigs, num characteristic samples)
-    DT_v_t_mtx = repelem(DT.Points(:, 2)', num_DT_trigs_t, 1);                 %size = (num trigs, num characteristic samples)
-    
-    H1_integral_domain = ( ((DT_x_t_mtx < centroids_x_t_mtx) & (centroids_x_t_mtx < DT_x_t_mtx+epsilon_nut)) ) & ( ((0 < centroids_v_t_mtx) & (centroids_v_t_mtx < max(DT.Points(:, 2)))) );
-    
-    y_mtx = centroids_x_t_mtx; %(H1_integral_domain);
-    v_telda_mtx = centroids_v_t_mtx; %(H1_integral_domain);
+        
+    y_mtx = centroids_x_t_mtx; %(H1_integral_domain);       %note: already incorporated into H1_integral_domain
+    v_telda_mtx = centroids_v_t_mtx; %(H1_integral_domain); %note: already incorporated into H1_integral_domain
     integral_area_mtx = areas_t_mtx; %(H1_integral_domain);
     integral_density_mtx = density_t_mtx; %(H1_integral_domain);
     
