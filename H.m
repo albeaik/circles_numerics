@@ -7,6 +7,7 @@ function [ H_val ] = H( DT, DT_centroids, DT_areas, density, assume_fixed_DT )
 
     global pre_computation_done H1_integral_domain areas_t_mtx centroids_x_t_mtx centroids_v_t_mtx DT_x_t_mtx DT_v_t_mtx num_DT_points_t num_DT_trigs_t integral_area_mtx pre_computed_h_mtx pre_computed_Vterm_mtx
     global sparse_H1_integral_domain sparse_pre_computed_h_mtx sparse_pre_computed_Vterm_mtx sparse_integral_area_mtx
+    global sparse_h_V_area_terms
     
     epsilon_nut = 2;
     d_nut = 2;
@@ -36,19 +37,23 @@ function [ H_val ] = H( DT, DT_centroids, DT_areas, density, assume_fixed_DT )
         pre_computed_Vterm_mtx = (V(y_mtx - DT_x_t_mtx, d_nut, V_max) - DT_v_t_mtx);
         
         %sparcify
-        sparse_H1_integral_domain = sparse(H1_integral_domain);
-        sparse_pre_computed_h_mtx = sparse(sparse_H1_integral_domain .* pre_computed_h_mtx);
-        sparse_pre_computed_Vterm_mtx = sparse(sparse_H1_integral_domain .* pre_computed_Vterm_mtx);
-        sparse_integral_area_mtx = sparse(sparse_H1_integral_domain .* integral_area_mtx);
+        %sparse_H1_integral_domain = sparse(H1_integral_domain);
+        %sparse_pre_computed_h_mtx = sparse(sparse_H1_integral_domain .* pre_computed_h_mtx);
+        %sparse_pre_computed_Vterm_mtx = sparse(sparse_H1_integral_domain .* pre_computed_Vterm_mtx);
+        %sparse_integral_area_mtx = sparse(sparse_H1_integral_domain .* integral_area_mtx);
+        
+        sparse_h_V_area_terms = sparse(H1_integral_domain .* pre_computed_h_mtx .* pre_computed_Vterm_mtx .* integral_area_mtx);
         
         pre_computation_done = 1;
     end
-        
-    density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
-    integral_density_mtx = density_t_mtx; %(H1_integral_domain);
-    sparse_integral_density_mtx = sparse(sparse_H1_integral_domain .* integral_density_mtx);
     
-    H_val = sum(sparse_H1_integral_domain .* sparse_integral_density_mtx .* sparse_pre_computed_h_mtx .* sparse_pre_computed_Vterm_mtx .* sparse_integral_area_mtx);
+    H_val = sparse_h_V_area_terms' * density;
+        
+%     density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
+%     integral_density_mtx = density_t_mtx; %(H1_integral_domain);
+%     sparse_integral_density_mtx = sparse(sparse_H1_integral_domain .* integral_density_mtx);
+    
+%     H_val = sum(sparse_H1_integral_domain .* sparse_integral_density_mtx .* sparse_pre_computed_h_mtx .* sparse_pre_computed_Vterm_mtx .* sparse_integral_area_mtx);
 
 
 

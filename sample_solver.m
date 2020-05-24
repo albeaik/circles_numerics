@@ -29,7 +29,7 @@ density((tmp_trig_centers(:, 1) > 10 & tmp_trig_centers(:, 1) < 30 & tmp_trig_ce
 tmp_trig_centers = GetDelaunayCentroids( DT );
 %triplot(DT)
 %trisurf(DT.ConnectivityList, DT.Points(:, 1), DT.Points(:, 2), density)
-plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize', 15)
+%plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize', 15)
 
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
@@ -51,7 +51,7 @@ for time = 0:dt:T
     
     % simulate the characteristic equation
     DT_tau.Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
-                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, 1)' * dt];
+                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, 1) * dt];
     
     % simulate density scaling
     parfor trig_ind = 1:size(DT_t.ConnectivityList, 1)
