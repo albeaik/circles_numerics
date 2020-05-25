@@ -47,24 +47,19 @@ for time = 0:dt:T
     DT_tau = DT_t;
     density_tau = density_t;
     
-    [DT_t_centroids, DT_t_areas] = GetDelaunayCentroids(DT_t);  %sorted by triangle id
+    [DT_t_centroids] = GetDelaunayCentroids(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_t_areas] = GetDelaunayAreas(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     
     % simulate the characteristic equation
     DT_tau.Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
                                 DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, 1) * dt];
     
     % simulate density scaling
-    parfor trig_ind = 1:size(DT_t.ConnectivityList, 1)
-        trig_t = DT_t.ConnectivityList(trig_ind, :);
-        trig_tau = DT_tau.ConnectivityList(trig_ind, :);
-        
-        trig_t_coords = DT_t.Points(trig_t, :);
-        trig_tau_coords = DT_tau.Points(trig_tau, :);
-        
-        density_tau(trig_ind) = (polyarea(trig_t_coords(:, 1), trig_t_coords(:, 2)) / polyarea(trig_tau_coords(:, 1), trig_tau_coords(:, 2))) * density_t(trig_ind);
-    end
+    [DT_t_trig_areas] = GetDelaunayAreas(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_tau_trig_areas] = GetDelaunayAreas(DT_tau);  %sorted by triangle id
+    density_tau = (DT_t_trig_areas ./ DT_tau_trig_areas) .* density_t;
     
-    % remish
+    % remesh
     if(mod(time/dt, remesh_cycle) == 0)
         DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
