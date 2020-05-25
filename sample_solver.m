@@ -23,7 +23,10 @@ DT.ConnectivityList = t;
 %tmp_trig_centers = DT.incenter;
 tmp_trig_centers = GetDelaunayCentroids( DT );
 density = zeros([size(DT.ConnectivityList, 1), 1]);
-density((tmp_trig_centers(:, 1) > 10 & tmp_trig_centers(:, 1) < 30 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
+%density((tmp_trig_centers(:, 1) > 10 & tmp_trig_centers(:, 1) < 30 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
+
+density((tmp_trig_centers(:, 1) > 2 & tmp_trig_centers(:, 1) < 5 & tmp_trig_centers(:, 2) > 10 & tmp_trig_centers(:, 2) < 15)) = 1;
+density((tmp_trig_centers(:, 1) > 5 & tmp_trig_centers(:, 1) < 15 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
 
 %tmp_trig_centers = DT.incenter;
 tmp_trig_centers = GetDelaunayCentroids( DT );
