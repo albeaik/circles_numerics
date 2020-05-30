@@ -25,6 +25,7 @@ d0 = 2.5; % needed when define function Vf. Change later.
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2)));  
 h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
 theta=@(x,v) h(-x).*(Vf(x)-v).*(x<=epsilon).*(x>=0);
+theta2=@(x,v) h(-x).*(v).*(x<=epsilon).*(x>=0);
 epsilonx=1/3; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1/3;
 if lambdax > 2*min(3*epsilonx,2-3*epsilonx)/7
@@ -33,9 +34,13 @@ elseif epsilonx>2/3 || epsilonx <0
     disp('Viscosity approximation out of range')
 end
 x1 = linspace(-20,20,2.*nx);
-[V,X1]=meshgrid(v,x1);
-Theta=theta(X1,V);
-Thetaflip=flip(Theta);
+v1 = linspace(-20,20,2.*nv);
+[V,X1] = meshgrid(v,x1);
+[V1,X11] = meshgrid(v,x1);
+Theta = theta(X1,V);
+Theta2 = theta(X11,V1);
+Thetaflip = flip(Theta);
+Thetaflip2 = flip(Theta2);
 %We want that Theta(i-l-1,j)=Thetab(i,l,j)
 %see below the previous line for W that is now commented, and the definition of Thetab below to check that we
 %have the same thing.
