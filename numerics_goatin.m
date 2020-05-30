@@ -36,6 +36,14 @@ x1 = linspace(-20,20,2.*nx);
 [V,X1]=meshgrid(v,x1);
 Theta=theta(X1,V);
 Thetaflip=flip(Theta);
+%We want that Theta(i-l-1,j)=Theta2(i,l,j)
+%see below the previous line for W that is now commented, and the definition of Theta2 below to check that we
+%have the same thing.
+Theta2 = zeros(nx,nv,nx);
+for i = 1:nx
+    Theta2(i,1:nv,1:nx) = (Thetaflip(nx-i+(1:nx),1:nv))';
+end
+    
 W = zeros(nx,nv);
 [V2,~]=meshgrid(v,ones(1,nx));
 [V,X]=meshgrid(v,x);
@@ -50,13 +58,15 @@ for n=1:1:nt
             %epsilonx.*(-Q(n,3:nx,2:nv-1)+2.*Q(n,2:nx-1,2:nv-1)-Q(n,1:nx-2,2:nv-1))/2;
             %n
             
-            for i=1:1:nx
+  %          for i=1:1:nx
                       % for j=1:1:nv
                        %             W(i,j) = sum(sum(Theta(nx+i-(1:nx),j).*reshape(Q(n+1,1:nx,1:nv),nx,nv)));
                        % end
+                       %donc Thetaflip(nx-i+(1:nx),:)=Theta(nx-i+(1:nx),:)
                                     
-                       W(i,1:nv) = sum(Thetaflip(nx-i+(1:nx),:)'*reshape(Q(n+1,1:nx,1:nv),nx,nv),2);
-            end
+                       %W(i,1:nv) = sum(Thetaflip(nx-i+(1:nx),:)'*reshape(Q(n+1,1:nx,1:nv),nx,nv),2);
+            W(1:nx,1:nv) = sum(einsum(Theta2(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3);
+%            end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
              Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-...
              lambdav/2.*reshape(W(2:nx-1,2:nv-1).*(reshape(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,1:nv-2),nx-2,nv-2)),1,nx-2,nv-2) -...
