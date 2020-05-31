@@ -40,8 +40,8 @@ v1 = linspace(-20,20,2.*nv);
 Theta = theta(X1,V);
 Theta2 = theta(X11,V1);
 Thetaflip = flip(Theta);
-Thetaflip20 = flip(Theta2);
-Thetaflip2 = flip(Thetaflip20,2);
+%Thetaflip20 = flip(Theta2);
+%Thetaflip2 = flip(Thetaflip20,2);
 %We want that Theta(i-l-1,j)=Thetab(i,l,j)
 %see below the previous line for W that is now commented, and the definition of Thetab below to check that we
 %have the same thing.
@@ -51,11 +51,11 @@ for i = 1:nx
     Thetab(i,1:nv,1:nx) = (Thetaflip(nx-i+(1:nx),1:nv))';
 end
 
-for i = 1:nx
-    for j = 1:nv
-        Theta2b(i,j,1:nv,1:nx) = (Thetaflip2(nx-i+(1:nx),nv-j+(1:nv)))';
-    end
-end
+%for i = 1:nx
+%    for j = 1:nv
+%        Theta2b(i,j,1:nv,1:nx) = (Thetaflip2(nx-i+(1:nx),nv-j+(1:nv)))';
+%    end
+%end
 
 
 W = zeros(nx,nv);
