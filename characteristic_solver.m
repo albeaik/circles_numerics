@@ -6,36 +6,51 @@ clc
 pre_specified_initial_conditions
 
 %identify initial domain
-x_domain_lim = [0, 60];
+x_domain_lim = [0, 20];
 v_domain_lim = [0, 20];
+x_resolution = 80;
+v_resolution = 80;
+
 %n = 500;
 
-init_domain_points = [x_domain_lim(1), v_domain_lim(1); x_domain_lim(2), v_domain_lim(1); x_domain_lim(2), v_domain_lim(2); x_domain_lim(1), v_domain_lim(2); x_domain_lim(1), v_domain_lim(1)];   % (x, v)
-%init_domain_points = [init_domain_points; rand(n, 1)*x_domain_lim(2), rand(n, 1)*v_domain_lim(2)];
+%--- std basic meshing
+% init_domain_points = [x_domain_lim(1), v_domain_lim(1); x_domain_lim(2), v_domain_lim(1); x_domain_lim(2), v_domain_lim(2); x_domain_lim(1), v_domain_lim(2); x_domain_lim(1), v_domain_lim(1)];   % (x, v)
+% %init_domain_points = [init_domain_points; rand(n, 1)*x_domain_lim(2), rand(n, 1)*v_domain_lim(2)];
+% 
+% [p,t,e] = pmesh(init_domain_points, 50, 6);
+% %e=boundary_nodes(t);
+% 
+% DT.Points = p;
+% DT.ConnectivityList = t;
 
-[p,t,e] = pmesh(init_domain_points, 50, 6);
-%e=boundary_nodes(t);
+%--- matlab native meshing
+x=linspace(x_domain_lim(1), x_domain_lim(2), x_resolution);
+v=linspace(v_domain_lim(1), v_domain_lim(2), v_resolution);
+[x_grid, v_grid]=meshgrid(x, v);
 
-DT.Points = p;
-DT.ConnectivityList = t;
+init_domain_points = [x_grid(:), v_grid(:)];
 
-%DT = delaunayTriangulation(init_domain_points);
-%p = DT.Points;
-%t = DT.ConnectivityList;
+DT = delaunayTriangulation(init_domain_points);
+p = DT.Points;
+t = DT.ConnectivityList;
 
-%tmp_trig_centers = DT.incenter;
-tmp_trig_centers = GetDelaunayCentroids( DT );
+
+%--- generate density profile
+%Q0 = Q0_1;   %density support function
+Q0 = Q0_2;
+
+tmp_trig_centers = DT.incenter;
+%tmp_trig_centers = GetDelaunayCentroids( DT );
 density = zeros([size(DT.ConnectivityList, 1), 1]);
-%density((tmp_trig_centers(:, 1) > 10 & tmp_trig_centers(:, 1) < 30 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
-
-Q0 = Q0_1; %Q0_2;
 density(Q0(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
 
 %tmp_trig_centers = DT.incenter;
-tmp_trig_centers = GetDelaunayCentroids( DT );
+%tmp_trig_centers = GetDelaunayCentroids( DT );
 %triplot(DT)
 %trisurf(DT.ConnectivityList, DT.Points(:, 1), DT.Points(:, 2), density)
 %plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize', 15)
+
+%--- solve
 
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
@@ -47,25 +62,29 @@ DT_history{1} = DT_t;
 density_t = density;
 density_history{1} = density_t;
 t_index = 1;
-for time = 0:dt:T
+for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from native native to non-native but compatible data type
     % prepare for this iteration
     time
-    DT_tau = DT_t;
-    density_tau = density_t;
+    %DT_tau = DT_t;
+    %density_tau = density_t;
     
     [DT_t_centroids] = GetDelaunayCentroids(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     [DT_t_areas] = GetDelaunayAreas(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     
     % simulate the characteristic equation
-    DT_tau.Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
+    DT_tau_Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
                                 DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, 1) * dt];
+    
+    %create DT_tau object ==> note matlab native DT object recomputes triangulation if points updated directly                       
+	DT_tau.Points = DT_tau_Points;
+    DT_tau.ConnectivityList = DT_t.ConnectivityList;
     
     % simulate density scaling
     [DT_t_trig_areas] = GetDelaunayAreas(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     [DT_tau_trig_areas] = GetDelaunayAreas(DT_tau);  %sorted by triangle id
     density_tau = (DT_t_trig_areas ./ DT_tau_trig_areas) .* density_t;
     
-    % remesh
+    % remesh back to initial mesh
     if(mod(time/dt, remesh_cycle) == 0)
         DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
