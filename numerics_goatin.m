@@ -26,7 +26,7 @@ Q(1,:,end)=0;
 d0 = 2.5; % needed when define function Vf. Change later. 
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2)));  
 h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
-theta=@(x,v) alpha.*h(x).*(Vf(x)-v).*(x>=-epsilon).*(x<=0);
+theta=@(x,v) alpha.*h(x).*(Vf(-x)-v).*(x>=-epsilon).*(x<=0);
 theta2=@(x,v) beta.*h(x).*(-v).*(x>=-epsilon).*(x<=0);
 epsilonx=1/3; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1/3;
