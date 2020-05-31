@@ -2,10 +2,13 @@ close all
 clear all
 clc
 
+%load pre specified initial conditions
+pre_specified_initial_conditions
 
+%identify initial domain
 x_domain_lim = [0, 60];
 v_domain_lim = [0, 20];
-n = 500;
+%n = 500;
 
 init_domain_points = [x_domain_lim(1), v_domain_lim(1); x_domain_lim(2), v_domain_lim(1); x_domain_lim(2), v_domain_lim(2); x_domain_lim(1), v_domain_lim(2); x_domain_lim(1), v_domain_lim(1)];   % (x, v)
 %init_domain_points = [init_domain_points; rand(n, 1)*x_domain_lim(2), rand(n, 1)*v_domain_lim(2)];
@@ -25,8 +28,8 @@ tmp_trig_centers = GetDelaunayCentroids( DT );
 density = zeros([size(DT.ConnectivityList, 1), 1]);
 %density((tmp_trig_centers(:, 1) > 10 & tmp_trig_centers(:, 1) < 30 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
 
-density((tmp_trig_centers(:, 1) > 2 & tmp_trig_centers(:, 1) < 5 & tmp_trig_centers(:, 2) > 10 & tmp_trig_centers(:, 2) < 15)) = 1;
-density((tmp_trig_centers(:, 1) > 5 & tmp_trig_centers(:, 1) < 15 & tmp_trig_centers(:, 2) > 5 & tmp_trig_centers(:, 2) < 10)) = 1;
+Q0 = Q0_1; %Q0_2;
+density(Q0(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
 
 %tmp_trig_centers = DT.incenter;
 tmp_trig_centers = GetDelaunayCentroids( DT );
@@ -36,7 +39,7 @@ tmp_trig_centers = GetDelaunayCentroids( DT );
 
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
-T = 5;          %end time: seconds
+T = 1;          %end time: seconds
 remesh_cycle = 1;  %time steps
 
 DT_t = DT;
