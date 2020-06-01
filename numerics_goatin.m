@@ -51,7 +51,7 @@ end
 %COMMENT NEXT IF DON'T WANT H2
 v1 = linspace(-20,20,2.*nv);
 [V1,X11] = meshgrid(v1,x1);
-Theta2 = theta(X11,V1);
+Theta2 = theta2(X11,V1);
 Thetaflip20 = flip(Theta2);
 Thetaflip2 = flip(Thetaflip20,2);
 
