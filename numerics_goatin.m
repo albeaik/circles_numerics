@@ -19,15 +19,16 @@ t=linspace(0,10,nt);
 Q=zeros(nt+1,nx,nv);
 Q0=@(x,v) (x>=2).*(x<=5).*(v>=10).*(v<=15) + (x>=5).*(x<=15).*(v>=5).*(v<=10);
 
-y = zeros(nt+1);
+y = zeros(nt+1,1);
 y0 = 0 ;
-w = zeros(nt+1);
+w = zeros(nt+1,1);
 w0 = Vmax./3 ; 
 
 %Boundary conditions, useful functions
 
 lambdax=(t(2)-t(1))/(x(2)-x(1));
 lambdav=(t(2)-t(1))/(v(2)-v(1));
+dt = t(2)-t(1);
 [V,X]=meshgrid(v,x);
 Q(1,:,:)=Q0(X,V);
 Q(1,1,:)=0;
@@ -128,7 +129,7 @@ for n=1:1:nt
                        %W(i,1:nv) = sum(Thetaflip(nx-i+(1:nx),:)'*reshape(Q(n+1,1:nx,1:nv),nx,nv),2);%            W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3);
             
 %COMMENT NEXT LINE AND UNCOMMENT PREVIOUS ONE IF DON'T WANT H2 - NOT CHECKED, HANDLE CAREFULLY
-W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) + sum(einsum(Theta2b,reshape(Q(n+1,1:nx,1:nv),nx,nv),[3 4],[1 2]));
+W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) + sum(einsum(Theta2b,reshape(Q(n+1,1:nx,1:nv),nx,nv),[3 4],[1 2]))+ theta3(X,V,y(n)) + theta4(X,V,y(n),w(n));
 
 %sum(dot(Thetaflip2(nx-:+(1:nx),nv-:+(1:nv)),reshape(Q(n+1,1:nx,1:nv),nx,nv)))
 %            end
@@ -136,7 +137,9 @@ W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv)
              Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-...
              lambdav/2.*reshape(W(2:nx-1,2:nv-1).*(reshape(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,1:nv-2),nx-2,nv-2)),1,nx-2,nv-2) -...
              epsilonv.*(-Q(n+1,2:nx-1,3:nv)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
-            
+            %AV ODE update
+            y(n+1) = y(n) + w(n) * dt;
+            w(n+1) = w(n) + W(sum((y(n)-x)>=0),sum((w(n)-v)>=0)) * dt;
          figure(1)
          
          surf(X,V,reshape(Q(n,:,:),nx,nv));
@@ -147,6 +150,9 @@ W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv)
          colormap(jet);
          caxis([0 1]);
          view(0,90);
+         hold on
+         plot(y(n+1),w(n+1),'r*')
+         hold off
 
          drawnow;
            % Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-...
