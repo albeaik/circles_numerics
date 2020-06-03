@@ -5,10 +5,10 @@ close all
 nt=5e3;
 nx=2e2+1;
 nv=2e2;
-Vmax =10; % needed when define function Vf
+Vmax =20; % needed when define function Vf
 epsilon=1;
 alpha = 1;
-beta = 1;
+beta = 20;
 x=linspace(-0,20,nx);
 v=linspace(0,20,nv);
 t=linspace(0,10,nt);
@@ -22,7 +22,7 @@ Q0=@(x,v) (x>=2).*(x<=5).*(v>=10).*(v<=15) + (x>=5).*(x<=15).*(v>=5).*(v<=10);
 y = zeros(nt+1,1);
 y0 = 0 ;
 w = zeros(nt+1,1);
-w0 = Vmax./3 ; 
+w0 = 9*Vmax./10 ; 
 
 %Boundary conditions, useful functions
 
@@ -36,7 +36,8 @@ Q(1,end,:)=0;
 Q(1,:,1)=0;
 Q(1,:,end)=0;
 d0 = 2.5; % needed when define function Vf. Change later. 
-Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2)));  
+Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
+% h=(x>=-epsilon).*(x<=0);
 h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
 
 %Kernels
