@@ -61,8 +61,8 @@ DT.Constraints = discontinuity_edge_list;   %add discontinuity_edge_list as a co
 
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
-T = 0.03;          %end time: seconds
-remesh_cycle = 1;  %time steps
+T = 0.5;          %end time: seconds
+remesh_cycle = 10;  %time steps
 assume_fixed_DT = 0;
 
 DT_t = DT;
@@ -71,7 +71,7 @@ density_t = density;
 density_history{1} = density_t;
 t_index = 1;
 for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from native native to non-native but compatible data type
-    % prepare for this iteration
+    %~~~~~~~~ | prepare for this iteration
     time
     %DT_tau = DT_t;
     %density_tau = density_t;
@@ -79,6 +79,7 @@ for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from 
     [DT_t_centroids] = GetDelaunayCentroids(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     [DT_t_areas] = GetDelaunayAreas(DT_t);  %sorted by triangle id --> can pre-compute if DT is fixed
     
+    %~~~~~~~~ | evolve solution in time
     % simulate the characteristic equation
     DT_tau_Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
                                 DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, assume_fixed_DT) * dt];
@@ -92,62 +93,71 @@ for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from 
     [DT_tau_trig_areas] = GetDelaunayAreas(DT_tau);  %sorted by triangle id
     density_tau = (DT_t_trig_areas ./ DT_tau_trig_areas) .* density_t;
     
+    %~~~~~~~~ | mesh/discretization maintanance
+    
     %remesh
-	DT_tau_remished = DT;                   %restart mesh to original.. and assume discontinuity constraints already incorporated into DT
-    DT_tau_remished.Points(unique(discontinuity_edge_list(:)), :) = DT_tau.Points(unique(discontinuity_edge_list(:)), :); %keep track of discontinuity location
-    DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
-    
-    density_DT_tau_remished = zeros([size(DT_tau_remished_trig_centers, 1), 1]);
-    %knn_point_id = knnsearch(DT_tau.Points, DT_tau_remished_trig_centers, 'K', 1);
-    
-    tmp_pt_set_1 = DT_tau.Points(DT_tau.ConnectivityList(:, 1), :);
-    tmp_pt_set_2 = DT_tau.Points(DT_tau.ConnectivityList(:, 2), :);
-    tmp_pt_set_3 = DT_tau.Points(DT_tau.ConnectivityList(:, 3), :);
-    
-    trig_edge_lengths = sqrt(sum([tmp_pt_set_1 - tmp_pt_set_2; tmp_pt_set_2 - tmp_pt_set_3; tmp_pt_set_1 - tmp_pt_set_2].^2, 2));
-    max_trig_edge_length = max(trig_edge_lengths);
+    if(mod(time/dt, remesh_cycle) == 0)
+        DT_tau_remished = DT;                   %restart mesh to original.. and assume discontinuity constraints already incorporated into DT
+        DT_tau_remished.Points(unique(discontinuity_edge_list(:)), :) = DT_tau.Points(unique(discontinuity_edge_list(:)), :); %keep track of discontinuity location
+        DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
 
-    parfor i = 1:size(DT_tau_remished_trig_centers, 1)
-       %knn_pt_index = knn_point_id(i);
-       q_pt = DT_tau_remished_trig_centers(i, :);
-       
-       knn_pt_index = find(sqrt(sum((DT_tau.Points - repmat(q_pt, size(DT_tau.Points, 1), 1)).^2, 2)) <= 2*max_trig_edge_length);
+        density_DT_tau_remished = zeros([size(DT_tau_remished_trig_centers, 1), 1]);
+        %knn_point_id = knnsearch(DT_tau.Points, DT_tau_remished_trig_centers, 'K', 1);
 
-       %tmp_inds = find(knn_pt_index == DT_tau.ConnectivityList(:));
-       %[tf, idx] = ismember(knn_pt_index, DT_tau.ConnectivityList(:)); %don't return repeat values
-       %tmp_inds = idx;
-       
-       tmp_inds = [];
-       for j = 1:size(knn_pt_index, 1)
-           tmp_inds = [tmp_inds; find(knn_pt_index(j) == DT_tau.ConnectivityList(:))];
-       end
+        tmp_pt_set_1 = DT_tau.Points(DT_tau.ConnectivityList(:, 1), :);
+        tmp_pt_set_2 = DT_tau.Points(DT_tau.ConnectivityList(:, 2), :);
+        tmp_pt_set_3 = DT_tau.Points(DT_tau.ConnectivityList(:, 3), :);
 
-       trig_ind = mod(tmp_inds-1, size(DT_tau.ConnectivityList, 1))+1;
+        trig_edge_lengths = sqrt(sum([tmp_pt_set_1 - tmp_pt_set_2; tmp_pt_set_2 - tmp_pt_set_3; tmp_pt_set_1 - tmp_pt_set_2].^2, 2));
+        max_trig_edge_length = max(trig_edge_lengths);
 
-       is_interior = zeros(size(trig_ind));
-       for j = 1:size(trig_ind, 1)
-           trig_xy = DT_tau.Points(DT_tau.ConnectivityList(trig_ind(j), :), :);
-           is_interior(j) = inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2));
-       end
+        parfor i = 1:size(DT_tau_remished_trig_centers, 1)
+           %knn_pt_index = knn_point_id(i);
+           q_pt = DT_tau_remished_trig_centers(i, :);
 
-       enclosing_trig = find(is_interior == 1); % could return multiple if point is at boundary
+           knn_pt_index = find(sqrt(sum((DT_tau.Points - repmat(q_pt, size(DT_tau.Points, 1), 1)).^2, 2)) <= 2*max_trig_edge_length);
 
-       if(~isempty(enclosing_trig))
-           density_DT_tau_remished(i) = density_tau(trig_ind(enclosing_trig(1))); %choose first if at boundary
-       else
-           density_DT_tau_remished(i) = 0;  %outside mesh.. extrapolate to zero
-       end
+           %tmp_inds = find(knn_pt_index == DT_tau.ConnectivityList(:));
+           %[tf, idx] = ismember(knn_pt_index, DT_tau.ConnectivityList(:)); %don't return repeat values
+           %tmp_inds = idx;
+
+           tmp_inds = [];
+           for j = 1:size(knn_pt_index, 1)
+               tmp_inds = [tmp_inds; find(knn_pt_index(j) == DT_tau.ConnectivityList(:))];
+           end
+
+           trig_ind = mod(tmp_inds-1, size(DT_tau.ConnectivityList, 1))+1;
+
+           is_interior = zeros(size(trig_ind));
+           for j = 1:size(trig_ind, 1)
+               trig_xy = DT_tau.Points(DT_tau.ConnectivityList(trig_ind(j), :), :);
+               is_interior(j) = inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2));
+           end
+
+           enclosing_trig = find(is_interior == 1); % could return multiple if point is at boundary
+
+           if(~isempty(enclosing_trig))
+               density_DT_tau_remished(i) = density_tau(trig_ind(enclosing_trig(1))); %choose first if at boundary
+           else
+               density_DT_tau_remished(i) = 0;  %outside mesh.. extrapolate to zero
+           end
+        end
+
+        %DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
+        %density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+
+        %if(sum(isnan(density_tau(:))) > 0)
+        %    disp('Warning: Nans from earlier steps are eliminated!!')
+        %end
+
+        %density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
+        
+        assume_fixed_DT = 0;
+    else    %skip remishing
+        DT_tau_remished = DT_tau;
+        density_DT_tau_remished = density_tau;
+        assume_fixed_DT = 1;
     end
-    
-    %DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
-    %density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
-
-    %if(sum(isnan(density_tau(:))) > 0)
-    %    disp('Warning: Nans from earlier steps are eliminated!!')
-    %end
-
-    %density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
-
     
 %     % remesh back to initial mesh
 %     if(mod(time/dt, remesh_cycle) == 0)
@@ -166,7 +176,7 @@ for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from 
 %         density_DT_tau_remished = density_tau;
 %     end
     
-    % prepare for next iteration
+    %~~~~~~~~ | prepare for next iteration
     t_index = t_index + 1;
     DT_t = DT_tau_remished; % DT_tau;
     DT_history{t_index} = DT_t;
