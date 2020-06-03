@@ -20,9 +20,9 @@ Q=zeros(nt+1,nx,nv);
 Q0=@(x,v) (x>=2).*(x<=5).*(v>=10).*(v<=15) + (x>=5).*(x<=15).*(v>=5).*(v<=10);
 
 y = zeros(nt+1,1);
-y0 = 0 ;
+y0 = 7 ;
 w = zeros(nt+1,1);
-w0 = 9*Vmax./10 ; 
+w0 = 9*Vmax/10 ; 
 
 %Boundary conditions, useful functions
 
@@ -31,10 +31,10 @@ lambdav=(t(2)-t(1))/(v(2)-v(1));
 dt = t(2)-t(1);
 [V,X]=meshgrid(v,x);
 Q(1,:,:)=Q0(X,V);
-Q(1,1,:)=0;
-Q(1,end,:)=0;
-Q(1,:,1)=0;
-Q(1,:,end)=0;
+Q(:,1,:)=0;
+Q(:,end,:)=0;
+Q(:,:,1)=0;
+Q(:,:,end)=0;
 d0 = 2.5; % needed when define function Vf. Change later. 
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
 % h=(x>=-epsilon).*(x<=0);
