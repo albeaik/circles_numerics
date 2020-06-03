@@ -75,38 +75,50 @@ for i = 1:nx
 end
 
 %COMMENT NEXT IF DON'T WANT H2
-v1 = linspace(-20,20,2.*nv);
-[V1,X11] = meshgrid(v1,x1);
-Theta2 = theta2(X11,V1);
-Thetaflip20 = flip(Theta2);
-Thetaflip2 = flip(Thetaflip20,2);
+v1 = linspace(0,20,2.*nv);
+% [V1,X11] = meshgrid(v1,x1);
+% Theta2 = theta2(X11,V1);
+% Thetaflip20 = flip(Theta2);
+% Thetaflip2 = flip(Thetaflip20,2);
 
 %LIMITING FACTOR
-Theta2b = zeros(nx,nv,nx,nv);
-Theta2b0 = zeros(nx,nx,2*nv);
+% Theta2b = zeros(nx,nv,nx,nv);
+% Theta2b0 = zeros(nx,nx,2*nv);
 % for i = 1:nx
 %     for j = 1:nv
 %         Theta2b(i,j,1:nv,1:nx) = (Thetaflip2(nx-i+(1:nx),nv-j+(1:nv)))';
 %     end
 % end
+% 
+% for i = 1:nx
+% %    for j = 1:nv
+%         Theta2b0(i,1:nx,1:2*nv) = Thetaflip2(nx-i+(1:nx),(1:2*nv));
+% %    end
+% end
+% 
+% for j = 1:nv
+% %    for j = 1:nv
+%         Theta2b(1:nx,j,1:nx,1:nv) = Theta2b0(1:nx,1:nx,nv-j+(1:nv));
+%         %(Thetaflip2(nx-i+(1:nx),(1:2*nv)));
+% %    end
+% end
 
+%------ H2--------
+Thetax = h(fliplr(x1));
+Thetav = fliplr(v1);
+Thetaxb = zeros(nx,nx);
+Thetavb = zeros(nv,nv);
 for i = 1:nx
-%    for j = 1:nv
-        Theta2b0(i,1:nx,1:2*nv) = Thetaflip2(nx-i+(1:nx),(1:2*nv));
-%    end
+    Thetaxb(i,1:nx) = (Thetax(nx-i+(1:nx)));
 end
 
 for j = 1:nv
-%    for j = 1:nv
-        Theta2b(1:nx,j,1:nx,1:nv) = Theta2b0(1:nx,1:nx,nv-j+(1:nv));
-        %(Thetaflip2(nx-i+(1:nx),(1:2*nv)));
-%    end
+    Thetavb(j,1:nv) = (Thetav(nv-j+(1:nv)));
 end
 
 W = zeros(nx,nv);
 [V2,~]=meshgrid(v,ones(1,nx));
 [V,X]=meshgrid(v,x);
-A=W;
 
 %Time iteration
 
@@ -130,8 +142,8 @@ for n=1:1:nt
                        %W(i,1:nv) = sum(Thetaflip(nx-i+(1:nx),:)'*reshape(Q(n+1,1:nx,1:nv),nx,nv),2);%            W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3);
             
 %COMMENT NEXT LINE AND UNCOMMENT PREVIOUS ONE IF DON'T WANT H2 - NOT CHECKED, HANDLE CAREFULLY
-W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) + sum(einsum(Theta2b,reshape(Q(n+1,1:nx,1:nv),nx,nv),[3 4],[1 2]))+ theta3(X,V,y(n)) + theta4(X,V,y(n),w(n));
-
+%W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) + sum(einsum(Theta2b,reshape(Q(n+1,1:nx,1:nv),nx,nv),[3 4],[1 2]))+ theta3(X,V,y(n)) + theta4(X,V,y(n),w(n));
+W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) - (beta * Thetavb * (Thetaxb * reshape(Q(n+1,1:nx,1:nv),nx,nv))')' + theta3(X,V,y(n)) + theta4(X,V,y(n),w(n));
 %sum(dot(Thetaflip2(nx-:+(1:nx),nv-:+(1:nv)),reshape(Q(n+1,1:nx,1:nv),nx,nv)))
 %            end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
