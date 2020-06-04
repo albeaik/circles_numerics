@@ -21,8 +21,10 @@ Q0=@(x,v) (x>=2).*(x<=5).*(v>=10).*(v<=15) + (x>=5).*(x<=15).*(v>=5).*(v<=10);
 
 y = zeros(nt+1,1);
 y0 = 7 ;
+y(1) = y0;
 w = zeros(nt+1,1);
 w0 = 9*Vmax/10 ; 
+w(1) = w0;
 
 %Boundary conditions, useful functions
 
