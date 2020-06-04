@@ -157,8 +157,8 @@ W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv)
             %AV ODE update
             y(n+1) = y(n) + w(n) * dt;
             w(n+1) = w(n) + W(sum((y(n)-x)>=0),sum((w(n)-v)>=0)) * dt;
-            y(n+1) = round(y(n+1)./dx).*dx;
-            w(n+1) = round(w(n+1)./dv).*dv;
+            %y(n+1) = round(y(n+1)./dx).*dx;
+            %w(n+1) = round(w(n+1)./dv).*dv;
 
          figure(1)
          
