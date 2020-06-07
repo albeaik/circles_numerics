@@ -21,14 +21,18 @@ Q0=@(x,v) (x>=2).*(x<=5).*(v>=10).*(v<=15) + (x>=5).*(x<=15).*(v>=5).*(v<=10);
 
 y = zeros(nt+1,1);
 y0 = 7 ;
+y(1) = y0;
 w = zeros(nt+1,1);
 w0 = 9*Vmax/10 ; 
+w(1) = w0;
 
 %Boundary conditions, useful functions
 
 lambdax=(t(2)-t(1))/(x(2)-x(1));
 lambdav=(t(2)-t(1))/(v(2)-v(1));
 dt = t(2)-t(1);
+dx = x(2) - x(1);
+dv = v(2) - v(1);
 [V,X]=meshgrid(v,x);
 Q(1,:,:)=Q0(X,V);
 Q(:,1,:)=0;
@@ -153,6 +157,9 @@ W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv)
             %AV ODE update
             y(n+1) = y(n) + w(n) * dt;
             w(n+1) = w(n) + W(sum((y(n)-x)>=0),sum((w(n)-v)>=0)) * dt;
+            %y(n+1) = round(y(n+1)./dx).*dx;
+            %w(n+1) = round(w(n+1)./dv).*dv;
+
          figure(1)
          
          surf(X,V,reshape(Q(n,:,:),nx,nv));
