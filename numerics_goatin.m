@@ -43,7 +43,8 @@ Q(:,:,end)=0;
 d0 = 2.5; % needed when define function Vf. Change later. 
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
 % h=(x>=-epsilon).*(x<=0);
-h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
+%h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
+h=@(x) nanmax(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0), 0);
 
 %Kernels
 
