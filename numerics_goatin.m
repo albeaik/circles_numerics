@@ -2,11 +2,11 @@ clear all
 close all
 
 %Setting parameters
-nt=5e3;
-nx=2e2+1;
-nv=2e2;
+nt=3e4;
+nx=0.5e2+1;
+nv=0.5e2;
 Vmax =20; % needed when define function Vf
-epsilon=1;
+epsilon=2;
 alpha = 1;
 beta = 20;
 x=linspace(-0,20,nx);
@@ -34,17 +34,17 @@ lambdav=(t(2)-t(1))/(v(2)-v(1));
 dt = t(2)-t(1);
 dx = x(2) - x(1);
 dv = v(2) - v(1);
-[V,X]=meshgrid(v,x);
-Q(1,:,:)=Q0(X,V);
+%[V,X]=meshgrid(v,x);
+Q(1,:,:)=rand(nx,nv);
 Q(:,1,:)=0;
 Q(:,end,:)=0;
 Q(:,:,1)=0;
 Q(:,:,end)=0;
 d0 = 2.5; % needed when define function Vf. Change later. 
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
-% h=(x>=-epsilon).*(x<=0);
+% h=@(x)1/epsilon.*(x>=-epsilon).*(x<=0);
 %h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
-h=@(x) nanmax(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0), 0);
+h=@(x) max(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>=-epsilon).*(x<=0), 0,'omitnan');
 
 %Kernels
 
@@ -59,7 +59,7 @@ theta4 = @(x,v,y,w)(beta.*h(x-y).*(w-v)./M); %Action of AV FTL
 
 epsilonx=1/3; %viscosity parameter, needs to be changed later to a proper value
 epsilonv=1/3;
-if lambdax > 2*min(3*epsilonx,2-3*epsilonx)/7
+if lambdax > 2*min(3*epsilonx,2-3*epsilonx)/(1+6*v(end))
     disp('CFL condition in x not satisfied')
 elseif epsilonx>2/3 || epsilonx <0
     disp('Viscosity approximation out of range')
@@ -155,13 +155,20 @@ for k = 1:M
     ThetaW3M =  ThetaW3M + theta3(X,V,y(n,k));
     ThetaW4M =  ThetaW4M + theta4(X,V,y(n,k),w(n,k));
 end
-W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) - (beta * Thetavb * (Thetaxb * reshape(Q(n+1,1:nx,1:nv),nx,nv))')' + ThetaW3M + ThetaW4M;
+W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv),3,1),3) - (beta * Thetavb * (Thetaxb * reshape(Q(n+1,1:nx,1:nv),nx,nv))')'+ ThetaW3M + ThetaW4M;
 %sum(dot(Thetaflip2(nx-:+(1:nx),nv-:+(1:nv)),reshape(Q(n+1,1:nx,1:nv),nx,nv)))
 %            end
             W = (x(2)-x(1)).*(v(2)-v(1)).*W;
              Q(n+1,2:nx-1,2:nv-1)=Q(n+1,2:nx-1,2:nv-1)-...
              lambdav/2.*reshape(W(2:nx-1,2:nv-1).*(reshape(Q(n+1,2:nx-1,3:nv)-Q(n+1,2:nx-1,1:nv-2),nx-2,nv-2)),1,nx-2,nv-2) -...
              epsilonv.*(-Q(n+1,2:nx-1,3:nv)+2*Q(n+1,2:nx-1,2:nv-1)-Q(n+1,2:nx-1,1:nv-2))/2;
+         if lambdav > 2*min(3*epsilonv,2-3*epsilonv)/(1+6*max(max(Q(n+1,:,:))))
+                    disp('CFL condition in y not satisfied')
+         elseif epsilonv>2/3 || epsilonv <0
+                    disp('Viscosity approximation out of range')
+        end
+         
+         
             %AV ODE update
             for k = 1:M
                 y(n+1,k) = y(n,k) + w(n,k) * dt;
@@ -182,7 +189,7 @@ W(1:nx,1:nv) = sum(einsum(Thetab(1:nx,1:nv,1:nx),reshape(Q(n+1,1:nx,1:nv),nx,nv)
          view(0,90);
          hold on
          for k = 1:M
-            plot(y(n+1,k),w(n+1,k),'r*')
+            plot3(y(n+1,k),w(n+1,k),1,'r*')
          end
          hold off
 
