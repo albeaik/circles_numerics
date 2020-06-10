@@ -1,4 +1,4 @@
-function [ H_val ] = H( DT, density, H_args_xv, assume_fixed_DT )
+function [ H_val ] = H( DT, density, Autonomous_state, H_args_xv, assume_fixed_DT )
 % DT ~ density surface mesh (currently implemented as delaunay triangulation)
 % density ~ density value at inside each mesh element (triangle)
 % H_args_xv ~ points at which to evaluate H function ~ each row is a 2d vector [x, v]
@@ -16,7 +16,8 @@ function [ H_val ] = H( DT, density, H_args_xv, assume_fixed_DT )
     epsilon_nut = 1;
     d_nut = 2.5;
     V_max = 20;
-    beta = 1;
+    alpha = 1;
+    beta = 20;
     
     [DT_centroids] = GetDelaunayCentroids(DT);  %sorted by triangle id --> can pre-compute if DT is fixed
     [DT_areas] = GetDelaunayAreas(DT);          %sorted by triangle id --> can pre-compute if DT is fixed
@@ -56,9 +57,27 @@ function [ H_val ] = H( DT, density, H_args_xv, assume_fixed_DT )
         pre_computation_done = 1;
     end
     
-    H1_val = sparse_h_V_area_terms_H1' * density;
-    H2_val = - beta .* sparse_h_V_area_terms_H2' * density;
-    H_val = H1_val + H2_val;
+    %-------------
+    H1_val = alpha .* sparse_h_V_area_terms_H1' * density;
+    H2_val = - beta .* sparse_h_V_area_terms_H2' * density; %confirm this is supposed to be negative beta
+    %-------------
+    
+    
+    %-------------
+    num_aut_cars = size(Autonomous_state, 1);
+    aut_evalpts_argx_mtx = repelem(H_args_xv(:, 1)', num_aut_cars, 1);                      %size = (integral domain ~ num autonomous cars, evaluation points ~ num characteristic samples)
+    aut_evalpts_argv_mtx = repelem(H_args_xv(:, 2)', num_aut_cars, 1);                      %size = (integral domain ~ num autonomous cars, evaluation points ~ num characteristic samples)
+    aut_evalpts_auty_mtx = repelem(Autonomous_state(:, 1), 1, num_H_evaluation_points_t);   %size = (integral domain ~ num autonomous cars, evaluation points ~ num characteristic samples)
+    aut_evalpts_autw_mtx = repelem(Autonomous_state(:, 2), 1, num_H_evaluation_points_t);   %size = (integral domain ~ num autonomous cars, evaluation points ~ num characteristic samples)
+    
+    H1a_val = alpha .* mean(h(aut_evalpts_argx_mtx - aut_evalpts_auty_mtx, epsilon_nut) .* (V(aut_evalpts_auty_mtx - aut_evalpts_argx_mtx, d_nut, V_max) - aut_evalpts_argv_mtx))';
+    H2a_val = beta .* mean(h(aut_evalpts_argx_mtx - aut_evalpts_auty_mtx, epsilon_nut) .* (aut_evalpts_autw_mtx - aut_evalpts_argv_mtx))';
+    %-------------
+    
+    
+    %-------------
+    H_val = H1_val + H2_val + H1a_val + H2a_val;
+    %-------------
         
 %     density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
 %     integral_density_mtx = density_t_mtx; %(H1_integral_domain);

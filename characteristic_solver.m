@@ -68,10 +68,15 @@ mesh_subarea_minmax_limit = [0.0005, 2]; %min and max allowed triangle area befo
 dt_minmax_limit = [0.01, 0.0001];
 refine_mesh_now = 0;
 
+Autonomous_init_state = [7, 18; 9, 18];  %initial state of the autonomous cars.. each row is [position, speed]
+Autonomous_control_u = [0; 0];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
+
 DT_t = DT;
 DT_history{1} = DT_t;
 density_t = density;
 density_history{1} = density_t;
+Autonomous_state_t = Autonomous_init_state;
+Autonomous_state_history{1} = Autonomous_state_t;
 t_index = 1;
 time = 0;
 %for time = 0:dt:T                   %NOTE: inside this loop, DT_.. changes from native native to non-native but compatible data type
@@ -89,8 +94,11 @@ while(time <= T)
     %~~~~~~~~ | evolve solution in time
     % simulate the characteristic equation
     DT_tau_Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
-                                DT_t.Points(:, 2) + H(DT_t, density_t, DT_t.Points, assume_fixed_DT) * dt];
+                                DT_t.Points(:, 2) + H(DT_t, density_t, Autonomous_state_t, DT_t.Points, assume_fixed_DT) * dt];
     
+	% simulate the autonomous car ODE
+    Autonomous_state_tau = Autonomous_state_t + [Autonomous_state_t(:, 2)*dt, (H(DT_t, density_t, Autonomous_state_t, Autonomous_state_t, assume_fixed_DT) + Autonomous_control_u) * dt];
+                            
     %create DT_tau object ==> note matlab native DT object recomputes triangulation if points updated directly                       
 	DT_tau.Points = DT_tau_Points;
     DT_tau.ConnectivityList = DT_t.ConnectivityList;
@@ -233,6 +241,22 @@ while(time <= T)
     DT_history{t_index} = DT_t;
     density_t = density_DT_tau_remished; % density_tau;
     density_history{t_index} = density_t;
+    Autonomous_state_t = Autonomous_state_tau;
+    Autonomous_state_history{t_index} = Autonomous_state_t;
+    
+    %~~~~~~~~ | draw --> shouldn't create side effects after this line
+    visualize_trig_trig( DT_history{end}, density_history{end} );
+    title(['time - ', num2str(time)]);
+    xlim(x_domain_lim)
+    ylim(v_domain_lim)
+    %caxis([0, max(max(cell2mat(density_history)))])
+    caxis([0, 10])
+    
+    hold on
+    plot3(Autonomous_state_history{end}(:, 1), Autonomous_state_history{end}(:, 2), 10*ones(size(Autonomous_state_history{end}(:, 2))), 'r*')
+    hold off
+    
+    drawnow
 end
 
 
@@ -252,6 +276,10 @@ while(true)
     ylim(v_domain_lim)
     %caxis([0, max(max(cell2mat(density_history)))])
     caxis([0, 10])
+    
+    hold on
+    plot3(Autonomous_state_history{i}(:, 1), Autonomous_state_history{i}(:, 2), 10*ones(size(Autonomous_state_history{i}(:, 2))), 'r*')
+    hold off
     
     i = mod(i+1, size(DT_history, 2) -1 ) + 1;
 end
