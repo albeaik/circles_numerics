@@ -89,7 +89,7 @@ while(time <= T)
     %~~~~~~~~ | evolve solution in time
     % simulate the characteristic equation
     DT_tau_Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
-                                DT_t.Points(:, 2) + H(DT_t, DT_t_centroids, DT_t_areas, density_t, assume_fixed_DT) * dt];
+                                DT_t.Points(:, 2) + H(DT_t, density_t, DT_t.Points, assume_fixed_DT) * dt];
     
     %create DT_tau object ==> note matlab native DT object recomputes triangulation if points updated directly                       
 	DT_tau.Points = DT_tau_Points;
