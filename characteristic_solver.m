@@ -71,6 +71,8 @@ refine_mesh_now = 0;
 Autonomous_init_state = [7, 18; 9, 18];  %initial state of the autonomous cars.. each row is [position, speed]
 Autonomous_control_u = [0; 0];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
 
+tmp_quality_indicators_history = [0, 0, 0, 0, 0];
+
 DT_t = DT;
 DT_history{1} = DT_t;
 density_t = density;
@@ -111,135 +113,22 @@ while(time <= T)
     %~~~~~~~~ | mesh/discretization maintanance
     % (need to develop a strategy here)!! 1. evaluate, 2. adapt (in t, x, v), 3. propegate geneges or reset if necessary
     % adaptation strategy!! 1. resampling, 2. retriangulation 3. interpolation
-    
-    %evaluate degeneracy (1. area based, 2. intersection based, .. etc)
-    refine_mesh_now = 0;
-    [DT_tau_trig_areas] = GetDelaunayAreas(DT_tau);
-    if((min(DT_tau_trig_areas) < mesh_subarea_minmax_limit(1)) || (max(DT_tau_trig_areas) > mesh_subarea_minmax_limit(2)))
-        dt = dt / 2;
-        if(dt < dt_minmax_limit(2))     %if time step is too small, reset dt and remesh instead
-            dt = dt_minmax_limit(1);
-            refine_mesh_now = 1;
-        else
-            continue;       %replace with a more robust reset strategy and ensure reset is proper
-        end
-    end
-    
-%     %remesh   %constrained remesh and interpolation strategy.. good precision but code is junky and slow
-%     if(refine_mesh_now)
-%         DT_tau_remished = DT;                   %restart mesh to original.. and assume discontinuity constraints already incorporated into DT
-%         DT_tau_remished.Points(unique(discontinuity_edge_list(:)), :) = DT_tau.Points(unique(discontinuity_edge_list(:)), :); %keep track of discontinuity location
-%         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
-% 
-%         density_DT_tau_remished = zeros([size(DT_tau_remished_trig_centers, 1), 1]);
-%         %knn_point_id = knnsearch(DT_tau.Points, DT_tau_remished_trig_centers, 'K', 1);
-% 
-%         tmp_pt_set_1 = DT_tau.Points(DT_tau.ConnectivityList(:, 1), :);
-%         tmp_pt_set_2 = DT_tau.Points(DT_tau.ConnectivityList(:, 2), :);
-%         tmp_pt_set_3 = DT_tau.Points(DT_tau.ConnectivityList(:, 3), :);
-% 
-%         trig_edge_lengths = sqrt(sum([tmp_pt_set_1 - tmp_pt_set_2; tmp_pt_set_2 - tmp_pt_set_3; tmp_pt_set_1 - tmp_pt_set_2].^2, 2));
-%         max_trig_edge_length = max(trig_edge_lengths);
-% 
-%         parfor i = 1:size(DT_tau_remished_trig_centers, 1)
-%            %knn_pt_index = knn_point_id(i);
-%            q_pt = DT_tau_remished_trig_centers(i, :);
-% 
-%            knn_pt_index = find(sqrt(sum((DT_tau.Points - repmat(q_pt, size(DT_tau.Points, 1), 1)).^2, 2)) <= 2*max_trig_edge_length);
-% 
-%            %tmp_inds = find(knn_pt_index == DT_tau.ConnectivityList(:));
-%            %[tf, idx] = ismember(knn_pt_index, DT_tau.ConnectivityList(:)); %don't return repeat values
-%            %tmp_inds = idx;
-% 
-%            tmp_inds = [];
-%            for j = 1:size(knn_pt_index, 1)
-%                tmp_inds = [tmp_inds; find(knn_pt_index(j) == DT_tau.ConnectivityList(:))];
-%            end
-% 
-%            trig_ind = mod(tmp_inds-1, size(DT_tau.ConnectivityList, 1))+1;
-% 
-%            is_interior = zeros(size(trig_ind));
-%            for j = 1:size(trig_ind, 1)
-%                trig_xy = DT_tau.Points(DT_tau.ConnectivityList(trig_ind(j), :), :);
-%                is_interior(j) = inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2));
-%            end
-% 
-%            enclosing_trig = find(is_interior == 1); % could return multiple if point is at boundary
-% 
-%            if(~isempty(enclosing_trig))
-%                density_DT_tau_remished(i) = density_tau(trig_ind(enclosing_trig(1))); %choose first if at boundary
-%            else
-%                density_DT_tau_remished(i) = 0;  %outside mesh.. extrapolate to zero
-%            end
-%         end
-% 
-%         %DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
-%         %density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
-% 
-%         %if(sum(isnan(density_tau(:))) > 0)
-%         %    disp('Warning: Nans from earlier steps are eliminated!!')
-%         %end
-% 
-%         %density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
-%         
-%         assume_fixed_DT = 0;
-%     else    %skip remishing
-%         DT_tau_remished = DT_tau;
-%         density_DT_tau_remished = density_tau;
-%         assume_fixed_DT = 0;
-%     end
-    
-%     % remesh back to initial mesh
-%     if(refine_mesh_now)
-%         DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
-%         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
-%         DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
-%         density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
-%         
-%         if(sum(isnan(density_tau(:))) > 0)
-%             disp('Warning: Nans from earlier steps are eliminated!!')
-%         end
-%         
-%         density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
-%         assume_fixed_DT = 0;
-%     else    %skip remishing
-%         DT_tau_remished = DT_tau;
-%         density_DT_tau_remished = density_tau;
-%         assume_fixed_DT = 0;
-%     end
+    % for now: implement 
+    %   * mesh quality and degeneracy indicators: 1. triangle areas, 2. triangle edge length, 3. triangle overlap (not implemented yet)
+    %   * solution validation indicators: 1. conservation validation
 
-    % remesh: retriangulate DT_tau points
-    if(refine_mesh_now)
-        DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
-        DT_tau_remished.Points = DT_tau.Points; %constraints already set
-        DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
-        DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
-        density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
-        
-        if(sum(isnan(density_tau(:))) > 0)
-            disp('Warning: Nans from earlier steps are eliminated!!')
-        end
-        
-        density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
-        assume_fixed_DT = 0;
-    else    %skip remishing
-        DT_tau_remished = DT_tau;
-        density_DT_tau_remished = density_tau;
-        assume_fixed_DT = 0;
-    end
+    [ DT_tau_trig_areas ] = GetDelaunayAreas(DT_tau);                                           % triangle areas
+    [ DT_tau_triangle_edge_lengths ] = GetDelaunayTriangleEdgeLengths( DT );                    % edge lengths
+    [ DT_tau_total_surface_integral ] = GetTotalDensitySurfaceIntegral(DT_tau, density_tau);    % validate conservation
     
-    %~~~~~~~~ | validate conservation   --> also use to evaluate degeneracy?
-    tmp_areas = GetDelaunayAreas( DT_tau_remished );
-    tmp_densities = density_DT_tau_remished;
-    total_surface_integral = tmp_densities' * tmp_areas;
-    total_surface_integral
+    tmp_quality_indicators_history(end+1, :) = [min(DT_tau_trig_areas), max(DT_tau_trig_areas), min(DT_tau_triangle_edge_lengths), max(DT_tau_triangle_edge_lengths), DT_tau_total_surface_integral];
     
     %~~~~~~~~ | prepare for next iteration
     time = time + dt;
     t_index = t_index + 1;
-    DT_t = DT_tau_remished; % DT_tau;
+    DT_t = DT_tau; % DT_tau_remished; % DT_tau;
     DT_history{t_index} = DT_t;
-    density_t = density_DT_tau_remished; % density_tau;
+    density_t = density_tau; % density_DT_tau_remished; % density_tau;
     density_history{t_index} = density_t;
     Autonomous_state_t = Autonomous_state_tau;
     Autonomous_state_history{t_index} = Autonomous_state_t;
@@ -461,3 +350,130 @@ triplot(DT_plot.ConnectivityList, DT_plot.Points(:, 1)*10, DT_plot.Points(:, 2)*
 hold on
 DT_plot = DT_tau_remished;
 triplot(DT_plot.ConnectivityList, DT_plot.Points(:, 1)*10, DT_plot.Points(:, 2)*10, 'r')
+
+
+
+%==============
+%==============
+return;
+%============== | sample codes
+
+%     %~~~~~~~~ | mesh/discretization maintanance
+%     % (need to develop a strategy here)!! 1. evaluate, 2. adapt (in t, x, v), 3. propegate geneges or reset if necessary
+%     % adaptation strategy!! 1. resampling, 2. retriangulation 3. interpolation
+%     
+%     %evaluate degeneracy (1. area based, 2. intersection based, .. etc)
+%     refine_mesh_now = 0;
+%     [DT_tau_trig_areas] = GetDelaunayAreas(DT_tau);
+%     if((min(DT_tau_trig_areas) < mesh_subarea_minmax_limit(1)) || (max(DT_tau_trig_areas) > mesh_subarea_minmax_limit(2)))
+%         dt = dt / 2;
+%         if(dt < dt_minmax_limit(2))     %if time step is too small, reset dt and remesh instead
+%             dt = dt_minmax_limit(1);
+%             refine_mesh_now = 1;
+%         else
+%             continue;       %replace with a more robust reset strategy and ensure reset is proper
+%         end
+%     end
+%------------    
+%     %remesh   %constrained remesh and interpolation strategy.. good precision but code is junky and slow
+%     if(refine_mesh_now)
+%         DT_tau_remished = DT;                   %restart mesh to original.. and assume discontinuity constraints already incorporated into DT
+%         DT_tau_remished.Points(unique(discontinuity_edge_list(:)), :) = DT_tau.Points(unique(discontinuity_edge_list(:)), :); %keep track of discontinuity location
+%         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
+% 
+%         density_DT_tau_remished = zeros([size(DT_tau_remished_trig_centers, 1), 1]);
+%         %knn_point_id = knnsearch(DT_tau.Points, DT_tau_remished_trig_centers, 'K', 1);
+% 
+%         tmp_pt_set_1 = DT_tau.Points(DT_tau.ConnectivityList(:, 1), :);
+%         tmp_pt_set_2 = DT_tau.Points(DT_tau.ConnectivityList(:, 2), :);
+%         tmp_pt_set_3 = DT_tau.Points(DT_tau.ConnectivityList(:, 3), :);
+% 
+%         trig_edge_lengths = sqrt(sum([tmp_pt_set_1 - tmp_pt_set_2; tmp_pt_set_2 - tmp_pt_set_3; tmp_pt_set_1 - tmp_pt_set_2].^2, 2));
+%         max_trig_edge_length = max(trig_edge_lengths);
+% 
+%         parfor i = 1:size(DT_tau_remished_trig_centers, 1)
+%            %knn_pt_index = knn_point_id(i);
+%            q_pt = DT_tau_remished_trig_centers(i, :);
+% 
+%            knn_pt_index = find(sqrt(sum((DT_tau.Points - repmat(q_pt, size(DT_tau.Points, 1), 1)).^2, 2)) <= 2*max_trig_edge_length);
+% 
+%            %tmp_inds = find(knn_pt_index == DT_tau.ConnectivityList(:));
+%            %[tf, idx] = ismember(knn_pt_index, DT_tau.ConnectivityList(:)); %don't return repeat values
+%            %tmp_inds = idx;
+% 
+%            tmp_inds = [];
+%            for j = 1:size(knn_pt_index, 1)
+%                tmp_inds = [tmp_inds; find(knn_pt_index(j) == DT_tau.ConnectivityList(:))];
+%            end
+% 
+%            trig_ind = mod(tmp_inds-1, size(DT_tau.ConnectivityList, 1))+1;
+% 
+%            is_interior = zeros(size(trig_ind));
+%            for j = 1:size(trig_ind, 1)
+%                trig_xy = DT_tau.Points(DT_tau.ConnectivityList(trig_ind(j), :), :);
+%                is_interior(j) = inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2));
+%            end
+% 
+%            enclosing_trig = find(is_interior == 1); % could return multiple if point is at boundary
+% 
+%            if(~isempty(enclosing_trig))
+%                density_DT_tau_remished(i) = density_tau(trig_ind(enclosing_trig(1))); %choose first if at boundary
+%            else
+%                density_DT_tau_remished(i) = 0;  %outside mesh.. extrapolate to zero
+%            end
+%         end
+% 
+%         %DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
+%         %density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+% 
+%         %if(sum(isnan(density_tau(:))) > 0)
+%         %    disp('Warning: Nans from earlier steps are eliminated!!')
+%         %end
+% 
+%         %density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
+%         
+%         assume_fixed_DT = 0;
+%     else    %skip remishing
+%         DT_tau_remished = DT_tau;
+%         density_DT_tau_remished = density_tau;
+%         assume_fixed_DT = 0;
+%     end
+    
+%     % remesh back to initial mesh
+%     if(refine_mesh_now)
+%         DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
+%         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
+%         DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
+%         density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+%         
+%         if(sum(isnan(density_tau(:))) > 0)
+%             disp('Warning: Nans from earlier steps are eliminated!!')
+%         end
+%         
+%         density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
+%         assume_fixed_DT = 0;
+%     else    %skip remishing
+%         DT_tau_remished = DT_tau;
+%         density_DT_tau_remished = density_tau;
+%         assume_fixed_DT = 0;
+%     end
+%------------
+%     % remesh: retriangulate DT_tau points
+%     if(refine_mesh_now)
+%         DT_tau_remished = DT;       %new mish = origianl mish.. assuming DT wasn't changed since initialization
+%         DT_tau_remished.Points = DT_tau.Points; %constraints already set
+%         DT_tau_remished_trig_centers = GetDelaunayCentroids( DT_tau_remished );
+%         DT_tau_trig_centers = GetDelaunayCentroids( DT_tau );
+%         density_DT_tau_remished = griddata(DT_tau_trig_centers(:, 1), DT_tau_trig_centers(:, 2), density_tau, DT_tau_remished_trig_centers(:, 1), DT_tau_remished_trig_centers(:, 2));
+%         
+%         if(sum(isnan(density_tau(:))) > 0)
+%             disp('Warning: Nans from earlier steps are eliminated!!')
+%         end
+%         
+%         density_DT_tau_remished(isnan(density_DT_tau_remished)) = 0; %Note: "griddata returns NaN for query points outside of the convex hull."
+%         assume_fixed_DT = 0;
+%     else    %skip remishing
+%         DT_tau_remished = DT_tau;
+%         density_DT_tau_remished = density_tau;
+%         assume_fixed_DT = 0;
+%     end
