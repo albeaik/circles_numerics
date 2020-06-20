@@ -8,8 +8,8 @@ pre_specified_initial_conditions
 %identify initial domain
 x_domain_lim = [0, 20];
 v_domain_lim = [0, 20];
-x_resolution = 80;
-v_resolution = 80;
+x_resolution = 40;
+v_resolution = 40;
 
 %n = 500;
 
@@ -68,8 +68,8 @@ mesh_subarea_minmax_limit = [0.0005, 2]; %min and max allowed triangle area befo
 dt_minmax_limit = [0.01, 0.0001];
 refine_mesh_now = 0;
 
-Autonomous_init_state = [7, 18; 9, 18];  %initial state of the autonomous cars.. each row is [position, speed]
-Autonomous_control_u = [0; 0];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
+Autonomous_init_state = [7, 7; 9, 7];  %initial state of the autonomous cars.. each row is [position, speed]
+Autonomous_control_u = [-2; -2];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
 
 tmp_quality_indicators_history = [0, 0, 0, 0, 0];
 
@@ -136,10 +136,12 @@ while(time <= T)
     %~~~~~~~~ | draw --> shouldn't create side effects after this line
     visualize_trig_trig( DT_history{end}, density_history{end} );
     title(['time - ', num2str(time)]);
-    xlim(x_domain_lim)
+    xlim(x_domain_lim*2)
     ylim(v_domain_lim)
     %caxis([0, max(max(cell2mat(density_history)))])
-    caxis([0, 10])
+    caxis([0, 10]);
+    colorpalette = colormap('jet');
+    set(gca,'Color', colorpalette(1, :));   %assuming xaxis lower limit is zero, and density of areas outside of meshed surface is also zero
     
     hold on
     plot3(Autonomous_state_history{end}(:, 1), Autonomous_state_history{end}(:, 2), 10*ones(size(Autonomous_state_history{end}(:, 2))), 'r*')
