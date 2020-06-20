@@ -61,7 +61,7 @@ DT.Constraints = discontinuity_edge_list;   %add discontinuity_edge_list as a co
 
 time = 0;       %time: seconds
 dt = 0.01;       %t step size: seconds
-T = 2.5;          %end time: seconds
+T = 3;          %end time: seconds
 remesh_cycle = 100;  %time steps
 assume_fixed_DT = 0;    %used to determain if pre-computations can be used ==> under what conditions can I assume fixed DT?! need to confirm
 mesh_subarea_minmax_limit = [0.0005, 2]; %min and max allowed triangle area before mesh refinement
@@ -96,10 +96,10 @@ while(time <= T)
     %~~~~~~~~ | evolve solution in time
     % simulate the characteristic equation
     DT_tau_Points = [DT_t.Points(:, 1) + DT_t.Points(:, 2) * dt, ...
-                                DT_t.Points(:, 2) + H(DT_t, density_t, Autonomous_state_t, DT_t.Points, assume_fixed_DT) * dt];
+                                DT_t.Points(:, 2) + H_IDM(DT_t, density_t, Autonomous_state_t, DT_t.Points, assume_fixed_DT) * dt];
     
 	% simulate the autonomous car ODE
-    Autonomous_state_tau = Autonomous_state_t + [Autonomous_state_t(:, 2)*dt, (H(DT_t, density_t, Autonomous_state_t, Autonomous_state_t, assume_fixed_DT) + Autonomous_control_u) * dt];
+    Autonomous_state_tau = Autonomous_state_t + [Autonomous_state_t(:, 2)*dt, (H_IDM(DT_t, density_t, Autonomous_state_t, Autonomous_state_t, assume_fixed_DT) + Autonomous_control_u) * dt];
                             
     %create DT_tau object ==> note matlab native DT object recomputes triangulation if points updated directly                       
 	DT_tau.Points = DT_tau_Points;
@@ -136,10 +136,10 @@ while(time <= T)
     %~~~~~~~~ | draw --> shouldn't create side effects after this line
     visualize_trig_trig( DT_history{end}, density_history{end} );
     title(['time - ', num2str(time)]);
-    xlim(x_domain_lim*2)
+    xlim(x_domain_lim*4)
     ylim(v_domain_lim)
     %caxis([0, max(max(cell2mat(density_history)))])
-    caxis([0, 10]);
+    caxis([0, 5]);
     colorpalette = colormap('jet');
     set(gca,'Color', colorpalette(1, :));   %assuming xaxis lower limit is zero, and density of areas outside of meshed surface is also zero
     
