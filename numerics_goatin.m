@@ -44,8 +44,14 @@ d0 = 2.5; % needed when define function Vf. Change later.
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
 % h=@(x)1/epsilon.*(x>=-epsilon).*(x<=0);
 %h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
-h=@(x) max(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>=-epsilon).*(x<=0), 0,'omitnan');
-
+%h=@(x) max(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>=-epsilon).*(x<=0), 0,'omitnan');
+%epsilon_0 = 1
+%epsilon_1 = 2
+c = epsilon_0.^2.*(epsilon_0+epsilon_1)/(32.*exp(2));
+h0 = @(x) c.^(-1).*max((x.^2).*exp(-x.*4./epsilon_0).*(x<=epsilon_0./2).*(x>=0)+...
+(epsilon_0.^2)./(epsilon_1.^2).*(((epsilon_1+epsilon_0)./2-x).^2).*exp(-((epsilon_1+epsilon_0)./2-x).*4./epsilon_1).*(x<=(epsilon_1+epsilon_0)./2).*(x>epsilon_0./2), 0,'omitnan');
+h = @(x)(h0(-x));
+plot(-(0:0.01:2),h(-(0:0.01:2)))
 %Kernels
 
 theta=@(x,v) alpha.*h(x).*(Vf(-x)-v).*(x>=-epsilon).*(x<=0);
