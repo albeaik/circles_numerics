@@ -143,6 +143,24 @@ for j = 1:nv
     Thetavb(j,1:nv) = (Thetav(nv-j+(1:nv)));
 end
 
+%-------New H, IDM--------
+Thetax = theta1x(fliplr(x1));
+Theta1v = theta1av(fliplr(v1));
+Theta2v = theta2av(fliplr(v1));
+Theta3v = theta3av(fliplr(v1));
+
+Thetaxb = zeros(nx,nx);
+Thetavb = zeros(nv,nv);
+for i = 1:nx
+%    Thetaxb(i,1:nx) = (Thetax(nx-i+(1:nx)));
+end
+
+for j = 1:nv
+%    Thetavb(j,1:nv) = (Thetav(nv-j+(1:nv)));
+end
+
+
+
 W = zeros(nx,nv);
 [V2,~]=meshgrid(v,ones(1,nx));
 [V,X]=meshgrid(v,x);
