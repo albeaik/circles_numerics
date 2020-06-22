@@ -2,7 +2,7 @@ clear all
 close all
 
 %Setting parameters
-nt=3e4;
+nt=3e3;
 nx=0.5e2+1;
 nv=0.5e2;
 Vmax =20; % needed when define function Vf
@@ -16,7 +16,7 @@ epsilon_0 = 1;
 epsilon_1 = 3;
 T = 4;
 a = 1;
-s_0 = 1;
+s0 = 1;
 b = 1;
 
 
@@ -40,8 +40,9 @@ lambdav=(t(2)-t(1))/(v(2)-v(1));
 dt = t(2)-t(1);
 dx = x(2) - x(1);
 dv = v(2) - v(1);
-%[V,X]=meshgrid(v,x);
-Q(1,:,:)=rand(nx,nv);
+[V,X]=meshgrid(v,x);
+%Q(1,:,:)=rand(nx,nv);
+Q(1,:,:)=Q0(X,V);
 Q(:,1,:)=0;
 Q(:,end,:)=0;
 Q(:,:,1)=0;
@@ -50,14 +51,12 @@ d0 = 2.5; % needed when define function Vf. Change later.
 Vf=@(x) Vmax.*((tanh(x./d0-2)+tanh(2))./(1+tanh(2))); 
 % h=@(x)1/epsilon.*(x>=-epsilon).*(x<=0);
 %h=@(x) exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>-epsilon).*(x<0);
-%h=@(x) max(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>=-epsilon).*(x<=0), 0,'omitnan');
-%epsilon_0 = 1
-%epsilon_1 = 2
-c = epsilon_0.^2.*(epsilon_0+epsilon_1)/(32.*exp(2));
-h0 = @(x) c.^(-1).*max((x.^2).*exp(-x.*4./epsilon_0).*(x<=epsilon_0./2).*(x>=0)+...
-(epsilon_0.^2)./(epsilon_1.^2).*(((epsilon_1+epsilon_0)./2-x).^2).*exp(-((epsilon_1+epsilon_0)./2-x).*4./epsilon_1).*(x<=(epsilon_1+epsilon_0)./2).*(x>epsilon_0./2), 0,'omitnan');
-h = @(x)(h0(-x));
-plot(-(0:0.01:2),h(-(0:0.01:2)))
+h=@(x) max(exp(-(1)./((epsilon./2).^2-(-x-epsilon/2).^2)).*(x>=-epsilon).*(x<=0), 0,'omitnan');
+%c = epsilon_0.^2.*(epsilon_0+epsilon_1)/(32.*exp(2));
+%h0 = @(x) c.^(-1).*max((x.^2).*exp(-x.*4./epsilon_0).*(x<=epsilon_0./2).*(x>=0)+...
+%(epsilon_0.^2)./(epsilon_1.^2).*(((epsilon_1+epsilon_0)./2-x).^2).*exp(-((epsilon_1+epsilon_0)./2-x).*4./epsilon_1).*(x<=(epsilon_1+epsilon_0)./2).*(x>epsilon_0./2), 0,'omitnan');
+%h = @(x)(h0(-x));
+%plot(-(0:0.01:2),h(-(0:0.01:2)))
 
 %Kernels
 
@@ -68,7 +67,7 @@ theta1x=@(x)(alpha.*(h(x)./x.^2));
 
 theta1av=@(v)((T+v./(2*sqrt(a.*b))).^2);
 theta2av=@(v)(2.*s0.*(T+v./(2*sqrt(a.*b))));
-theta3av=@(v)(s_0.^2);
+theta3av=@(v)(s0.^2);
 
 theta1a=@(x,v)(theta1x(x).*theta1av(v));
 theta2a=@(x,v)(theta1x(x).*theta2av(v));
