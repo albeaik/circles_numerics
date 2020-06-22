@@ -12,6 +12,12 @@ beta = 20;
 x=linspace(-0,20,nx);
 v=linspace(0,20,nv);
 t=linspace(0,10,nt);
+epsilon_0 = 1;
+epsilon_1 = 3;
+T = 4;
+a = 1;
+s_0 = 1;
+b = 1;
 
 
 %Initializing
@@ -55,21 +61,21 @@ plot(-(0:0.01:2),h(-(0:0.01:2)))
 
 %Kernels
 
-%theta=@(x,v) alpha.*h(x).*(Vf(-x)-v).*(x>=-epsilon).*(x<=0);
-%theta2=@(x,v) beta.*h(x).*(-v).*(x>=-epsilon).*(x<=0);
+theta=@(x,v) alpha.*h(x).*(Vf(-x)-v).*(x>=-epsilon).*(x<=0);
+theta2=@(x,v) beta.*h(x).*(-v).*(x>=-epsilon).*(x<=0);
 
 theta1x=@(x)(alpha.*(h(x)./x.^2));
 
-theta1av=@(v)((T+v./(2*sqrt(ab))).^2);
-theta2av=@(v)(2.*s0.*(T+v./(2*sqrt(ab))));
+theta1av=@(v)((T+v./(2*sqrt(a.*b))).^2);
+theta2av=@(v)(2.*s0.*(T+v./(2*sqrt(a.*b))));
 theta3av=@(v)(s_0.^2);
 
 theta1a=@(x,v)(theta1x(x).*theta1av(v));
 theta2a=@(x,v)(theta1x(x).*theta2av(v));
 theta3a=@(x,v)(theta1x(x).*theta3av(v));
 
-%theta1a=@(x,v)(theta1x(x).*theta1av(v));alpha.*(h(x)./x.^2).*(T+v./(2*sqrt(ab))).^2);
-%theta2a=@(x,v)(alpha.*2.*(h(x)./x.^2).*s0.*(T+v./(2*sqrt(ab)))); 
+%theta1a=@(x,v)(theta1x(x).*theta1av(v));alpha.*(h(x)./x.^2).*(T+v./(2*sqrt(a.*b))).^2);
+%theta2a=@(x,v)(alpha.*2.*(h(x)./x.^2).*s0.*(T+v./(2*sqrt(a.*b)))); 
 %theta3a=@(x,v)(alpha.*(h(x)./x.^2).*s0.^2);
 
 
