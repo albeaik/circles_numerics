@@ -91,7 +91,7 @@ function [ H_val ] = H_IDM( DT, density, Autonomous_state, H_args_xv, assume_fix
     %-------------
     H_IDM_evalpts_density_mtx = repelem(density, 1, num_H_evaluation_points_t);       %size = (integral domain ~ num trigs, evaluation points ~ num characteristic samples)
     
-	H_IDM_effect = a - sum(pre_computed_h_mtx .* H_IDM_evalpts_density_mtx .* ( (DT_v_t_mtx./v_o).^little_delta + ( (s_o + DT_v_t_mtx .* T + DT_v_t_mtx .* (DT_v_t_mtx - v_telda_mtx) ./ sqrt(2.*a.*b) ) ./ (y_mtx - DT_x_t_mtx - l) ).^2 ) .* integral_area_mtx)';
+	H_IDM_effect = a - a.* (H_args_xv(:, 2)./v_o).^little_delta - a.* sum(pre_computed_h_mtx .* H_IDM_evalpts_density_mtx .* ( (s_o + DT_v_t_mtx .* T + DT_v_t_mtx .* (DT_v_t_mtx - v_telda_mtx) ./ sqrt(2.*a.*b) ) ./ (y_mtx - DT_x_t_mtx - l) ).^2 .* integral_area_mtx)';
     
     H_IDM_effect(isnan(H_IDM_effect)) = 0;  %WARNING!! hard coded fix to numerical explosions caused by div by zero.. it should be ok for now, BUT fix later
     %-------------
