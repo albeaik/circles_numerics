@@ -1,4 +1,4 @@
-function [ H_val ] = H( DT, density, Autonomous_state, H_args_xv, assume_fixed_DT )
+function [ H_val ] = H( evolving_mesh_obj, user_defined_coupler_obj, H_args_xv )
 % DT ~ density surface mesh (currently implemented as delaunay triangulation)
 % density ~ density value at inside each mesh element (triangle)
 % H_args_xv ~ points at which to evaluate H function ~ each row is a 2d vector [x, v]
@@ -12,6 +12,14 @@ function [ H_val ] = H( DT, density, Autonomous_state, H_args_xv, assume_fixed_D
     global pre_computation_done H1_integral_domain areas_t_mtx centroids_x_t_mtx centroids_v_t_mtx DT_x_t_mtx DT_v_t_mtx num_H_evaluation_points_t num_DT_trigs_t integral_area_mtx pre_computed_h_mtx pre_computed_Vterm_mtx
     global sparse_H1_integral_domain sparse_pre_computed_h_mtx sparse_pre_computed_Vterm_mtx sparse_integral_area_mtx
     global sparse_h_V_area_terms_H1 sparse_h_V_area_terms_H2
+    
+    assume_fixed_DT = 0;
+    
+    DT = evolving_mesh_obj.DT;
+    density = evolving_mesh_obj.density;
+    
+    Autonomous_state = user_defined_coupler_obj.Autonomous_state;
+    
     
     epsilon_nut = 1;
     d_nut = 2.5;

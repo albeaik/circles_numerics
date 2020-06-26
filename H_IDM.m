@@ -1,4 +1,4 @@
-function [ H_val ] = H_IDM( DT, density, Autonomous_state, H_args_xv, assume_fixed_DT )
+function [ H_val ] = H_IDM( evolving_mesh_obj, user_defined_coupler_obj, H_args_xv )
 % DT ~ density surface mesh (currently implemented as delaunay triangulation)
 % density ~ density value at inside each mesh element (triangle)
 % H_args_xv ~ points at which to evaluate H function ~ each row is a 2d vector [x, v]
@@ -7,6 +7,13 @@ function [ H_val ] = H_IDM( DT, density, Autonomous_state, H_args_xv, assume_fix
 %                           integral domains and relevant matrices
 %                      ==> NOT IMPLEMENTED
     
+    assume_fixed_DT = 0;
+    
+    DT = evolving_mesh_obj.DT;
+    density = evolving_mesh_obj.density;
+    
+    Autonomous_state = user_defined_coupler_obj.Autonomous_state;
+
     %------------- | parameters
     epsilon_nut = 1;
     d_nut = 2.5;
