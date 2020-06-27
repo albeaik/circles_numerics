@@ -27,8 +27,8 @@ function [ H_val ] = H( evolving_mesh_obj, user_defined_coupler_obj, H_args_xv )
     alpha = 1;
     beta = 20;
     
-    [DT_centroids] = GetDelaunayCentroids(DT);  %sorted by triangle id --> can pre-compute if DT is fixed
-    [DT_areas] = GetDelaunayAreas(DT);          %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_centroids] = evolving_mesh_obj.GetMeshCentroids(DT);  %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_areas] = evolving_mesh_obj.GetMeshAreas(DT);          %sorted by triangle id --> can pre-compute if DT is fixed
     
     if(assume_fixed_DT == 0 | isempty(pre_computation_done)) %cold start
         num_H_evaluation_points_t = size(H_args_xv, 1);

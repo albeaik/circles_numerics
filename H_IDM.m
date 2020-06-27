@@ -32,8 +32,8 @@ function [ H_val ] = H_IDM( evolving_mesh_obj, user_defined_coupler_obj, H_args_
     
     
     %------------- | get mesh surface geometry information
-    [DT_centroids] = GetDelaunayCentroids(DT);  %sorted by triangle id --> can pre-compute if DT is fixed
-    [DT_areas] = GetDelaunayAreas(DT);          %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_centroids] = evolving_mesh_obj.GetMeshCentroids(DT);  %sorted by triangle id --> can pre-compute if DT is fixed
+    [DT_areas] = evolving_mesh_obj.GetMeshAreas(DT);          %sorted by triangle id --> can pre-compute if DT is fixed
     
     
 %     %------------- | process and evaluate IDM effects

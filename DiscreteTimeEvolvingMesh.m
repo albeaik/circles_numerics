@@ -184,7 +184,7 @@ classdef DiscreteTimeEvolvingMesh < handle
         end
         
         function [ total_surface_integral ] = GetTotalDensitySurfaceIntegral( DT, density )
-            total_surface_integral = density' * GetDelaunayAreas( DT );
+            total_surface_integral = density' * DiscreteTimeEvolvingMesh.GetMeshAreas( DT );
         end
         
         function [ centroids ] = GetMeshCentroids( DT )
