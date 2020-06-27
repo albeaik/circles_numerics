@@ -9,10 +9,8 @@ classdef DiscreteTimeEvolvingMesh < handle
         time;
         time_step_number;
         
-        x_domain_lim;
-        v_domain_lim;
-        x_resolution;
-        v_resolution;
+        mesh_domain_limits; %[x_domain_lim; v_domain_lim]   %2 by 2 matrix
+        mesh_resolution;    %[x_resolution; v_resolution]   %2 by 1 vector
         
         time_history;
         DT_history;
@@ -22,7 +20,7 @@ classdef DiscreteTimeEvolvingMesh < handle
     end
     
     methods
-        function obj = DiscreteTimeEvolvingMesh(Q0, x_domain_lim, v_domain_lim, x_resolution, v_resolution)
+        function obj = DiscreteTimeEvolvingMesh(Q0, mesh_domain_limits, mesh_resolution)
             %default constuctor function!
             
             %set initial time
@@ -39,8 +37,8 @@ classdef DiscreteTimeEvolvingMesh < handle
             % DT.ConnectivityList = t;
 
             %--- matlab native meshing
-            x=linspace(x_domain_lim(1), x_domain_lim(2), x_resolution);
-            v=linspace(v_domain_lim(1), v_domain_lim(2), v_resolution);
+            x=linspace(mesh_domain_limits(1, 1), mesh_domain_limits(1, 2), mesh_resolution(1));
+            v=linspace(mesh_domain_limits(2, 1), mesh_domain_limits(2, 2), mesh_resolution(2));
             [x_grid, v_grid]=meshgrid(x, v);
 
             init_domain_points = [x_grid(:), v_grid(:)];
@@ -77,10 +75,13 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.time = time;
             obj.time_step_number = 1;
             
-            obj.x_domain_lim = x_domain_lim;
-            obj.v_domain_lim = v_domain_lim;
-            obj.x_resolution = x_resolution;
-            obj.v_resolution = v_resolution;
+            %obj.x_domain_lim = x_domain_lim;
+            %obj.v_domain_lim = v_domain_lim;
+            %obj.x_resolution = x_resolution;
+            %obj.v_resolution = v_resolution;
+            
+            obj.mesh_domain_limits = mesh_domain_limits;
+            obj.mesh_resolution = mesh_resolution;
             
             obj.time_history{obj.time_step_number} = obj.time;
             obj.DT_history{obj.time_step_number} = obj.DT;
@@ -102,7 +103,7 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.density_history{obj.time_step_number} = obj.density;
             
             %~~~~~
-            obj.MeshMaintanance();
+            obj.MeshMaintanance();  %now only updates quality metrics.. figure out what to do here later
         end
         
         function MeshMaintanance(obj)
@@ -128,10 +129,10 @@ classdef DiscreteTimeEvolvingMesh < handle
                 tstep = obj.time_step_number;
             end
             
-            visualize_trig_trig( obj.DT_history{tstep}, obj.density_history{tstep} );
+            obj.visualize_triangulation( obj.DT_history{tstep}, obj.density_history{tstep} );
             title(['Time - ', num2str(obj.time_history{tstep})]);
-            xlim(obj.x_domain_lim*2)
-            ylim(obj.v_domain_lim)
+            xlim(obj.mesh_domain_limits(1, :)*2)
+            ylim(obj.mesh_domain_limits(2, :))
             %caxis([0, max(max(cell2mat(density_history)))])
             caxis([0, 10]);
             colorpalette = colormap('jet');
@@ -204,6 +205,20 @@ classdef DiscreteTimeEvolvingMesh < handle
             trigs_x = reshape(DT.Points(DT.ConnectivityList', 1), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
             trigs_y = reshape(DT.Points(DT.ConnectivityList', 2), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
             centroids = [mean(trigs_x, 2), mean(trigs_y, 2)];
+        end
+        
+        function visualize_triangulation( DT_plot, density_plot )
+            %ref: https://www.mathworks.com/matlabcentral/answers/165624-how-to-color-trisurf-faces
+
+            trianglation_edge_alpha = 0;
+
+            hh = trisurf(DT_plot.ConnectivityList, DT_plot.Points(:, 1), DT_plot.Points(:, 2), DT_plot.Points(:, 2)*0+1);
+            set(gca,'CLim',[min(density_plot), max(density_plot)]);
+            set(hh,'FaceColor','flat', 'FaceVertexCData',density_plot, 'CDataMapping','scaled');
+            set(hh,'edgecolor', ([1 1 1])*0.3, 'EdgeAlpha', trianglation_edge_alpha)
+            colorbar
+
+            view(0,90)
         end
     end
     

@@ -7,12 +7,9 @@ pre_specified_initial_conditions;
 Q0 = Q0_2; %Q0_1;   %density support function
 
 %initialize solution object: set initial domain and triangulation resolution and construct solution object
-x_domain_lim = [0, 20];
-v_domain_lim = [0, 20];
-x_resolution = 40;
-v_resolution = 40;
-
-q_solution_mesh = DiscreteTimeEvolvingMesh(Q0, x_domain_lim, v_domain_lim, x_resolution, v_resolution);
+mesh_domain_limits = [0, 20; 0, 20];
+mesh_resolution = [40; 40];
+q_solution_mesh = DiscreteTimeEvolvingMesh(Q0, mesh_domain_limits, mesh_resolution);
 
 %initialize coupled ODE object
 activate_coupling = true;
