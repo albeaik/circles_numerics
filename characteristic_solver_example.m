@@ -32,5 +32,6 @@ T = 1;         %end time: seconds
 %solve!
 [solution] = characteristic_solver(q_solution_mesh, dt, T, PDEModel, autonomous_car_coupling, do_realtimedraw);
 
-%save gif
-solution.SaveAnimation(autonomous_car_coupling, '../plots/june_26/sample_sim.gif');
+%visualizations
+solution.VisualizeAnimation(autonomous_car_coupling, 2)
+%solution.SaveAnimation(autonomous_car_coupling, '../plots/june_26/sample_sim.gif');

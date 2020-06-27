@@ -138,14 +138,27 @@ classdef DiscreteTimeEvolvingMesh < handle
             set(gca,'Color', colorpalette(1, :));   %assuming xaxis lower limit is zero, and density of areas outside of meshed surface is also zero
         end
         
+        function VisualizeAnimation(obj, userdef_coupler, num_repeats)
+            while(num_repeats ~= 0) %repeat num_repeats time, or non stop if negative
+                
+                for n = 1:obj.time_step_number
+                    obj.VisualizeStep(n);
+                    userdef_coupler.VisualizeStep(n);
+                    
+                    if(n < obj.time_step_number)
+                        pause(obj.time_history{n+1} - obj.time_history{n})
+                    end
+                end
+                
+                num_repeats = num_repeats - 1;
+            end
+        end
+        
         function SaveAnimation(obj, userdef_coupler, fname)
-            DT_history = obj.DT_history;
-            density_history = obj.density_history;
-            
             h = figure;
             axis tight manual % this ensures that getframe() returns a consistent size
             filename = fname; %'../plots/may_31/sample_sim.gif';
-            for n = 1:size(DT_history, 2)
+            for n = 1:obj.time_step_number
                 % Draw plot for y = x.^n
 
                 obj.VisualizeStep(n);
