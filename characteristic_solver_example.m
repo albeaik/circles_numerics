@@ -15,9 +15,10 @@ v_resolution = 40;
 q_solution_mesh = DiscreteTimeEvolvingMesh(Q0, x_domain_lim, v_domain_lim, x_resolution, v_resolution);
 
 %initialize coupled ODE object
+activate_coupling = true;
 initial_autonomous_state = [7, 7; 9, 7];  %initial state of the autonomous cars.. each row is [position, speed]
 autonomous_control_u = [-2; -2];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
-autonomous_car_coupling = UserDefinedCoupling(initial_autonomous_state, autonomous_control_u);
+autonomous_car_coupling = UserDefinedCoupling(activate_coupling, initial_autonomous_state, autonomous_control_u);
 
 %define PDE model
 PDEModel.G = @G;

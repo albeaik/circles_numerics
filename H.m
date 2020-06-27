@@ -19,7 +19,7 @@ function [ H_val ] = H( evolving_mesh_obj, user_defined_coupler_obj, H_args_xv )
     density = evolving_mesh_obj.density;
     
     Autonomous_state = user_defined_coupler_obj.Autonomous_state;
-    
+    activate_coupling = user_defined_coupler_obj.activate_coupling;
     
     epsilon_nut = 1;
     d_nut = 2.5;
@@ -84,7 +84,7 @@ function [ H_val ] = H( evolving_mesh_obj, user_defined_coupler_obj, H_args_xv )
     
     
     %-------------
-    H_val = H1_val + H2_val + H1a_val + H2a_val;
+    H_val = H1_val + H2_val + (H1a_val + H2a_val) .* activate_coupling;
     %-------------
         
 %     density_t_mtx = repelem(density, 1, num_DT_points_t);         %size = (num trigs, num characteristic samples)
