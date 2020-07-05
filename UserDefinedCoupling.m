@@ -35,7 +35,7 @@ classdef UserDefinedCoupling < handle
                 solution_mesh = PDE_evolving_mesh_obj;
 
                 Autonomous_state_t = obj.Autonomous_state;
-                Autonomous_control_u = obj.Autonomous_control_u;
+                Autonomous_control_u = obj.Autonomous_control_u(:, mod(obj.time_step_number - 1, size(obj.Autonomous_control_u, 2)) + 1);
 
                 % simulate the autonomous car ODE
                 Autonomous_state_tau = Autonomous_state_t + dt*[PDEModel.G(solution_mesh, obj, Autonomous_state_t), ...
