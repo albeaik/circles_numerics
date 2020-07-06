@@ -20,52 +20,34 @@ classdef DiscreteTimeEvolvingMesh < handle
     end
     
     methods
-        function obj = DiscreteTimeEvolvingMesh(Q0, mesh_domain_limits, mesh_resolution)
+        function obj = DiscreteTimeEvolvingMesh(initialization_option, initialization_parameters)
             %default constuctor function!
+            %   initialization_option = {'oracle-function', 'pre-defined-initialization'}
+            %   'oracle-function' -> initialization_parameters is a struct
+            %                           initialization_parameters.Q0: queryable function such that init_density(x, v) <- Q0(x, v)
+            %                           initialization_parameters.mesh_domain_limits [xmin, xmax; vmin, vmax]
+            %                           initialization_parameters.mesh_resolution [number of mesh points x, number of mesh points v]
+            %   'pre-defined-initialization' -> initialization_parameters is a struct
+            %                           initialization_parameters.DT
+            %                           initialization_parameters.density
+            %old prototype: obj = DiscreteTimeEvolvingMesh(Q0, mesh_domain_limits, mesh_resolution)
             
             %set initial time
             time = 0;
             
-            %--- std basic meshing
-            % init_domain_points = [x_domain_lim(1), v_domain_lim(1); x_domain_lim(2), v_domain_lim(1); x_domain_lim(2), v_domain_lim(2); x_domain_lim(1), v_domain_lim(2); x_domain_lim(1), v_domain_lim(1)];   % (x, v)
-            % %init_domain_points = [init_domain_points; rand(n, 1)*x_domain_lim(2), rand(n, 1)*v_domain_lim(2)];
-            % 
-            % [p,t,e] = pmesh(init_domain_points, 50, 6);
-            % %e=boundary_nodes(t);
-            % 
-            % DT.Points = p;
-            % DT.ConnectivityList = t;
-
-            %--- matlab native meshing
-            x=linspace(mesh_domain_limits(1, 1), mesh_domain_limits(1, 2), mesh_resolution(1));
-            v=linspace(mesh_domain_limits(2, 1), mesh_domain_limits(2, 2), mesh_resolution(2));
-            [x_grid, v_grid]=meshgrid(x, v);
-
-            init_domain_points = [x_grid(:), v_grid(:)];
-
-            DT = delaunayTriangulation(init_domain_points);
-            %p = DT.Points;
-            %t = DT.ConnectivityList;
-
-
-            %--- generate density profile
-            %tmp_trig_centers = DT.incenter;
-            tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
-            density = zeros([size(DT.ConnectivityList, 1), 1]);
-            density(Q0(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
-
-            %tmp_trig_centers = DT.incenter;
-            %tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
-            %triplot(DT)
-            %trisurf(DT.ConnectivityList, DT.Points(:, 1), DT.Points(:, 2), density)
-            %plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize', 15)
-
-            %--- identify discontinuities
-            % assuming discontinuities were not known apriori, but are detectable
-            %maxdtdensity = 0.5;
-            %discontinuity_edge_list = get_discontinuity_edge_list(DT, density, maxdtdensity);
-
-            %DT.Constraints = discontinuity_edge_list;   %add discontinuity_edge_list as a constraint to triangulation
+            switch initialization_option
+                case 'oracle-function'
+                    [DT, density] = DiscreteTimeEvolvingMesh.GenerateMeshFromOracle(initialization_parameters);
+                    mesh_domain_limits = initialization_parameters.mesh_domain_limits;
+                    mesh_resolution = initialization_parameters.mesh_resolution;
+                case 'pre-defined-initialization'
+                    DT = initialization_parameters.DT;
+                    density = initialization_parameters.density;
+                    mesh_domain_limits = [min(DT.Points(:, 1)), max(DT.Points(:, 1)); min(DT.Points(:, 2)), max(DT.Points(:, 2))];
+                    mesh_resolution = -1;
+                otherwise
+                    disp('Error!!')
+            end
 
             %===========| construct object
             obj = obj@handle();
@@ -181,6 +163,54 @@ classdef DiscreteTimeEvolvingMesh < handle
     end
     
     methods(Static)
+        function [DT, density] = GenerateMeshFromOracle(parameters)
+            %parse
+            Q0 = parameters.Q0;
+            mesh_domain_limits = parameters.mesh_domain_limits;
+            mesh_resolution = parameters.mesh_resolution;
+            
+            %--- std basic meshing
+            % init_domain_points = [x_domain_lim(1), v_domain_lim(1); x_domain_lim(2), v_domain_lim(1); x_domain_lim(2), v_domain_lim(2); x_domain_lim(1), v_domain_lim(2); x_domain_lim(1), v_domain_lim(1)];   % (x, v)
+            % %init_domain_points = [init_domain_points; rand(n, 1)*x_domain_lim(2), rand(n, 1)*v_domain_lim(2)];
+            % 
+            % [p,t,e] = pmesh(init_domain_points, 50, 6);
+            % %e=boundary_nodes(t);
+            % 
+            % DT.Points = p;
+            % DT.ConnectivityList = t;
+
+            %--- matlab native meshing
+            x=linspace(mesh_domain_limits(1, 1), mesh_domain_limits(1, 2), mesh_resolution(1));
+            v=linspace(mesh_domain_limits(2, 1), mesh_domain_limits(2, 2), mesh_resolution(2));
+            [x_grid, v_grid]=meshgrid(x, v);
+
+            init_domain_points = [x_grid(:), v_grid(:)];
+
+            DT = delaunayTriangulation(init_domain_points);
+            %p = DT.Points;
+            %t = DT.ConnectivityList;
+
+
+            %--- generate density profile
+            %tmp_trig_centers = DT.incenter;
+            tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
+            density = zeros([size(DT.ConnectivityList, 1), 1]);
+            density(Q0(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
+
+            %tmp_trig_centers = DT.incenter;
+            %tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
+            %triplot(DT)
+            %trisurf(DT.ConnectivityList, DT.Points(:, 1), DT.Points(:, 2), density)
+            %plot3(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2), density, '.', 'markersize', 15)
+
+            %--- identify discontinuities
+            % assuming discontinuities were not known apriori, but are detectable
+            %maxdtdensity = 0.5;
+            %discontinuity_edge_list = get_discontinuity_edge_list(DT, density, maxdtdensity);
+
+            %DT.Constraints = discontinuity_edge_list;   %add discontinuity_edge_list as a constraint to triangulation
+        end
+        
         function [ areas ] = GetMeshAreas(DT)
             trigs_x = reshape(DT.Points(DT.ConnectivityList', 1), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
             trigs_y = reshape(DT.Points(DT.ConnectivityList', 2), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
@@ -210,7 +240,7 @@ classdef DiscreteTimeEvolvingMesh < handle
         function visualize_triangulation( DT_plot, density_plot )
             %ref: https://www.mathworks.com/matlabcentral/answers/165624-how-to-color-trisurf-faces
 
-            trianglation_edge_alpha = 0;
+            trianglation_edge_alpha = 0.5;
 
             hh = trisurf(DT_plot.ConnectivityList, DT_plot.Points(:, 1), DT_plot.Points(:, 2), DT_plot.Points(:, 2)*0+1);
             set(gca,'CLim',[min(density_plot), max(density_plot)]);
