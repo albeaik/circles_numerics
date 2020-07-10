@@ -240,7 +240,7 @@ classdef DiscreteTimeEvolvingMesh < handle
         function visualize_triangulation( DT_plot, density_plot )
             %ref: https://www.mathworks.com/matlabcentral/answers/165624-how-to-color-trisurf-faces
 
-            trianglation_edge_alpha = 0.5;
+            trianglation_edge_alpha = 0;
 
             hh = trisurf(DT_plot.ConnectivityList, DT_plot.Points(:, 1), DT_plot.Points(:, 2), DT_plot.Points(:, 2)*0+1);
             set(gca,'CLim',[min(density_plot), max(density_plot)]);
