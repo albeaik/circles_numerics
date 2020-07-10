@@ -18,17 +18,18 @@ function [ H_val ] = H_IDM( evolving_mesh_obj, user_defined_coupler_obj, H_args_
     %------------- | parameters
     epsilon_nut = 1;
     d_nut = 2.5;
-    V_max = 15;         %same as v_o for IDM??!
+    V_max = 30;         %same as v_o for IDM??!
     alpha = 1;
-    beta = 20;
+    bet
+    20;
     
     %H_IDM parameters       
     v_o = V_max;        %the velocity the vehicle would drive at in free traffic
     little_delta = 4;   
     s_o = 2;            %minimum spacings0:  a minimum desired net distance.  A car can not move if the distance from thecar in front is not at leasts0
     T = 1;              %desired time headwayT:  the minimum possible time to the vehicle in front (headway is the distancebetween vehicles in a transit system measured in time or space; the minimum headway is the shortestsuch distance or time achieved by a system without a reduction in the speed of vehicles)
-    a = 3;              %accelerationa:  the maximum vehicle acceleration
-    b = 3;              %comfortable braking decelerationb:  a positive number
+    a = 1.3;              %accelerationa:  the maximum vehicle acceleration
+    b = 2;              %comfortable braking decelerationb:  a positive number
     l = 4;              %gives the length of the vehicle
     
     
