@@ -22,7 +22,7 @@ for mesh_res = mesh_resolution_set
         q_solution_mesh = DiscreteTimeEvolvingMesh(initialization_option, initialization_parameters);
 
         %initialize coupled ODE object
-        activate_coupling = false;
+        activate_coupling = true;
         initial_autonomous_state = [7, 7; 9, 7];  %initial state of the autonomous cars.. each row is [position, speed]
         autonomous_control_u = [-2; -2];           %control for each autonomous car.. each row is [u_car_i].. assuming its constant over time for now
         autonomous_car_coupling = UserDefinedCoupling(activate_coupling, initial_autonomous_state, autonomous_control_u);
@@ -37,7 +37,9 @@ for mesh_res = mesh_resolution_set
         T = 1;         %end time: seconds
 
         %solve!
+        tic;
         solutions{index}.q = characteristic_solver(q_solution_mesh, dt, T, PDEModel, autonomous_car_coupling, do_realtimedraw);
+        solutions{index}.computational_time = toc;
         solutions{index}.coupling = autonomous_car_coupling;
         solutions{index}.res = mesh_res;
         solutions{index}.dt = dt;

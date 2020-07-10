@@ -20,8 +20,7 @@ function [ H_val ] = H_IDM( evolving_mesh_obj, user_defined_coupler_obj, H_args_
     d_nut = 2.5;
     V_max = 30;         %same as v_o for IDM??!
     alpha = 1;
-    bet
-    20;
+    beta = 20;
     
     %H_IDM parameters       
     v_o = V_max;        %the velocity the vehicle would drive at in free traffic
