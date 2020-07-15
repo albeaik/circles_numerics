@@ -180,22 +180,42 @@ classdef DiscreteTimeEvolvingMesh < handle
             % DT.ConnectivityList = t;
 
             %--- matlab native meshing
+            
+            %process Q0 and get discontinuity
+            discont_points = [];
+            discont_edges = [];
+            if(isa(Q0,'function_handle'))       %for backward compatibility
+                Q0_oracle = Q0;
+            else                                %implementation july 14, 2020
+                Q0_oracle = Q0.oracle;
+                if(~isempty(Q0.discontinuity_boundary_points) && ~isempty(Q0.discontinuity_boundary_edges))
+                    discont_points = Q0.discontinuity_boundary_points;
+                    discont_edges = Q0.discontinuity_boundary_edges;
+                end
+            end
+            
+            %sample domain
             x=linspace(mesh_domain_limits(1, 1), mesh_domain_limits(1, 2), mesh_resolution(1));
             v=linspace(mesh_domain_limits(2, 1), mesh_domain_limits(2, 2), mesh_resolution(2));
             [x_grid, v_grid]=meshgrid(x, v);
-
+            
             init_domain_points = [x_grid(:), v_grid(:)];
+            init_domain_points = [discont_points; init_domain_points];
 
-            DT = delaunayTriangulation(init_domain_points);
+            if(~isempty(discont_edges))
+                DT = delaunayTriangulation(init_domain_points, discont_edges);
+            else
+                DT = delaunayTriangulation(init_domain_points);
+            end
+            
             %p = DT.Points;
             %t = DT.ConnectivityList;
-
-
+                
             %--- generate density profile
             %tmp_trig_centers = DT.incenter;
             tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
             density = zeros([size(DT.ConnectivityList, 1), 1]);
-            density(Q0(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
+            density(Q0_oracle(tmp_trig_centers(:, 1), tmp_trig_centers(:, 2)) == 1) = 1;
 
             %tmp_trig_centers = DT.incenter;
             %tmp_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( DT );
