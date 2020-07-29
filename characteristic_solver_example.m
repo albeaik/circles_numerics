@@ -45,3 +45,5 @@ T = 1;         %end time: seconds
 %visualizations
 solution.VisualizeAnimation(autonomous_car_coupling, 2)
 %solution.SaveAnimation(autonomous_car_coupling, '../plots/june_26/sample_sim.gif');
+%VisualizeMeshEvolvingInTime(solution, autonomous_car_coupling ,[0, 1])
+%solution.VisualizeMultipleSteps(autonomous_car_coupling, [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
