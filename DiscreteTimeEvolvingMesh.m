@@ -9,6 +9,8 @@ classdef DiscreteTimeEvolvingMesh < handle
         time;
         time_step_number;
         
+        active_discontinuity_edges;
+        
         mesh_domain_limits; %[x_domain_lim; v_domain_lim]   %2 by 2 matrix
         mesh_resolution;    %[x_resolution; v_resolution]   %2 by 1 vector
         
@@ -57,6 +59,11 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.time = time;
             obj.time_step_number = 1;
             
+            obj.active_discontinuity_edges = [];
+            if(sum(strcmp(fieldnames(DT), 'Constraints')))  %consistent with matlab native object
+                obj.active_discontinuity_edges = DT.Constraints;
+            end
+            
             %obj.x_domain_lim = x_domain_lim;
             %obj.v_domain_lim = v_domain_lim;
             %obj.x_resolution = x_resolution;
@@ -73,6 +80,8 @@ classdef DiscreteTimeEvolvingMesh < handle
         end
         
         function EvolveMesh(obj, dt, newMesh, newMeshValues)
+            [newMesh, newMeshValues] = obj.MeshMaintanance(newMesh, newMeshValues);  %this needs to be impleemnted at solver level!! because we might need to undo solver step!!
+            
             obj.time_step_number = obj.time_step_number + 1;
             
             obj.time = obj.time + dt;
@@ -84,11 +93,85 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.density = newMeshValues;
             obj.density_history{obj.time_step_number} = obj.density;
             
-            %~~~~~
-            obj.MeshMaintanance();  %now only updates quality metrics.. figure out what to do here later
+            obj.MeshQualityIndicators(); %for now updates quality indicator array
         end
         
-        function MeshMaintanance(obj)
+        function [newDT, newDensity] = MeshMaintanance(obj, DT, density)
+            %~~~~~~~~ | mesh/discretization maintanance
+            % (need to develop a strategy here)!! 1. evaluate, 2. adapt (in t, x, v), 3. propegate geneges or reset if necessary
+            % adaptation strategy!! 1. resampling, 2. retriangulation 3. interpolation
+            % -----
+            % temp implementation for now
+            newDT = DT;
+            newDensity = density;
+            
+            %if(triangleOverlap) ~ not implemented
+            
+            min_trig_area_threshold = 1e-4;
+            [ DT_trig_areas ] = obj.GetMeshAreas(DT);                               % triangle areas   
+            
+            if(min(DT_trig_areas) < min_trig_area_threshold)                        %too small triangles
+                disp('Remesh!!!')
+                
+                %-----------------| regenerate mesh with discontinuity constraints
+                discont_edges = obj.active_discontinuity_edges;
+                discont_points = [];
+                if(~isempty(discont_edges)) %extract points given references from edges, and remap indecies to isolated point set
+                    [unique_disc_pt_indecies, ia, ic] = unique([discont_edges(:, 1); discont_edges(:, 2)]);
+                    disc_pts = DT.Points(unique_disc_pt_indecies, :);
+                    new_pt_indecies = 1:size(unique_disc_pt_indecies, 1);
+                    new_discont_edges_flat = new_pt_indecies(ic);
+                    new_discont_edges = reshape(new_discont_edges_flat, [size(new_discont_edges_flat, 2)/2, 2]);
+                    
+                    discont_edges = new_discont_edges;
+                    discont_points = disc_pts;
+                end
+                
+                %update domain limits
+                mesh_domain_limits = [min(DT.Points(:, 1)), max(DT.Points(:, 1)); min(DT.Points(:, 2)), max(DT.Points(:, 2))];
+                
+                %sample domain
+                x=linspace(mesh_domain_limits(1, 1), mesh_domain_limits(1, 2), obj.mesh_resolution(1));
+                v=linspace(mesh_domain_limits(2, 1), mesh_domain_limits(2, 2), obj.mesh_resolution(2));
+                [x_grid, v_grid]=meshgrid(x, v);
+
+                init_domain_points = [x_grid(:), v_grid(:)];
+                init_domain_points = [discont_points; init_domain_points];
+
+                if(~isempty(discont_edges))
+                    newDT = delaunayTriangulation(init_domain_points, discont_edges);
+                else
+                    newDT = delaunayTriangulation(init_domain_points);
+                end
+                %-----------------| some object state updaets
+                obj.active_discontinuity_edges = newDT.Constraints;
+                
+                %-----------------| interpolate new density values
+                new_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( newDT );
+                newDensity = zeros([size(newDT.ConnectivityList, 1), 1]);
+                
+                %need to improve computational efficiency!!
+                parfor i = 1:size(newDT.ConnectivityList, 1)   %loop over all new triangles
+                    for j = 1:size(DT.ConnectivityList, 1)  %loop over all old triangles
+                        q_pt = new_trig_centers(i, :);
+                        trig_xy = DT.Points(DT.ConnectivityList(j, :), :);
+                        if(inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2)))
+                            newDensity(i) = density(j);
+                            continue;
+                        end
+                    end
+                end
+                
+               %-----------------| plot
+               figure
+               subplot(1, 2, 1)
+               triplot(DT.ConnectivityList, DT.Points(:, 1), DT.Points(:, 2))
+               subplot(1, 2, 2)
+               triplot(newDT.ConnectivityList, newDT.Points(:, 1), newDT.Points(:, 2))
+            end
+        end
+        
+        function MeshQualityIndicators(obj)
             DT_tau = obj.DT;
             density_tau = obj.density;
             

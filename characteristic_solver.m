@@ -3,6 +3,10 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
     %--- if not initialized, then ??
     solution_mesh = solution_obj;
     userdef_coupler = user_defined_coupler_obj;
+    
+    if(do_realtimedraw)
+        fighandle = figure;
+    end
 
     %--- solve
     time = 0;       %time: seconds
@@ -37,6 +41,7 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         
         %~~~~~~~~ | draw --> shouldn't create side effects after this line
         if(do_realtimedraw)
+            figure(fighandle)
             solution_mesh.VisualizeStep(-1);
             userdef_coupler.VisualizeStep(-1);
             drawnow
