@@ -20,3 +20,8 @@ Q0_7.discontinuity_boundary_edges = [Q0_7.dbe1; Q0_7.dbe2+size(Q0_7.dbp1, 1)];
 Q0_8.oracle = @(x,v) (x>=0).*(x<=10).*(v>=12).*(v<=13);
 Q0_8.discontinuity_boundary_points = [Q0_8.dbp1];
 Q0_8.discontinuity_boundary_edges = [Q0_8.dbe1];
+
+[Q0_9.dbp1, Q0_9.dbe1] = get_rectangler_discontinuity_boundary( [0,5], [10,10], [0.5,1] ); 
+Q0_9.oracle = @(x,v) (x>=0).*(x<=10).*(v>=5).*(v<=10);
+Q0_9.discontinuity_boundary_points = [Q0_9.dbp1];
+Q0_9.discontinuity_boundary_edges = [Q0_9.dbe1];

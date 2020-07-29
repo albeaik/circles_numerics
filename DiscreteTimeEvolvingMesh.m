@@ -121,6 +121,32 @@ classdef DiscreteTimeEvolvingMesh < handle
             set(gca,'Color', colorpalette(1, :));   %assuming xaxis lower limit is zero, and density of areas outside of meshed surface is also zero
         end
         
+        function VisualizeMultipleSteps(obj, userdef_coupler, plt_times)
+            %fighandle = figure
+            %plt_times = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
+            dt = obj.time_history{2}-obj.time_history{1};     %assume constant dt
+            for t_ind = 1:size(plt_times, 2)
+                subplot(1, size(plt_times, 2), t_ind)
+                time = plt_times(t_ind);
+                n = plt_times(t_ind)/dt+1; %find(cell2mat(solutions{index}.q.time_history) == time);
+                obj.VisualizeStep(n);
+                userdef_coupler.VisualizeStep(n);
+
+                %xlim([0, 15])
+                %ylim([5, 12])
+                %caxis([0, 2]);
+                %colorbar off;
+
+                %if(t_ind == 1)
+                %    ylabel('Characteristic Solver')
+                %end
+                %xlabel('t')
+                %set(gca,'FontSize',15);
+            end
+            %set(gcf, 'Position',  [74         614        1562         334])
+            set(gcf, 'Position',  [1         760        1680         188])
+        end
+        
         function VisualizeAnimation(obj, userdef_coupler, num_repeats)
             while(num_repeats ~= 0) %repeat num_repeats time, or non stop if negative
                 
