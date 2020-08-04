@@ -34,7 +34,17 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         userdef_coupler.SimulateStep(dt, PDEModel, solution_mesh);
 
         %~~~~~~~~ | commit PDE step ---------------------------------------
-        solution_mesh.EvolveMesh(dt, DT_tau, density_tau);
+        [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = solution_mesh.EvolveMesh(dt, DT_tau, density_tau);
+        
+        if(terminate)
+            disp('Discretization scheme failed!!! solver terminated!')
+            break;
+        end
+        
+        if(forceUndoStep)
+            dt = newdt;
+            continue;   %Don't advance time and don't drawing
+        end
         
         %~~~~~~~~ | advance time stamp ------------------------------------
         time = time + dt;

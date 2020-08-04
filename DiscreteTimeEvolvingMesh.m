@@ -3,13 +3,14 @@ classdef DiscreteTimeEvolvingMesh < handle
     %   Detailed explanation goes here
     %-- now assumes a triangulation.. can generalize to other types? 
     
-    properties
+    properties  %note: re-evaluate code... centralize all updates to these propertiese to ensure consistency
         DT;
         density;
         time;
         time_step_number;
         
-        active_discontinuity_edges;
+        active_discontinuity_edges;     %--> note: these are implemented in ad hoc manner.. not consistent with history based commit structure.. can can cause issues if not carefully used
+        direction_of_mesh_faces;        %--> note: these are implemented in ad hoc manner.. not consistent with history based commit structure.. can can cause issues if not carefully used
         
         mesh_domain_limits; %[x_domain_lim; v_domain_lim]   %2 by 2 matrix
         mesh_resolution;    %[x_resolution; v_resolution]   %2 by 1 vector
@@ -64,6 +65,8 @@ classdef DiscreteTimeEvolvingMesh < handle
                 obj.active_discontinuity_edges = DT.Constraints;
             end
             
+            obj.direction_of_mesh_faces = obj.GetTrigFaceDirections( DT );
+            
             %obj.x_domain_lim = x_domain_lim;
             %obj.v_domain_lim = v_domain_lim;
             %obj.x_resolution = x_resolution;
@@ -79,35 +82,63 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.quality_indicators_history = [0, 0, 0, 0, 0];
         end
         
-        function EvolveMesh(obj, dt, newMesh, newMeshValues)
-            [newMesh, newMeshValues] = obj.MeshMaintanance(newMesh, newMeshValues);  %this needs to be impleemnted at solver level!! because we might need to undo solver step!!
+        function [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = EvolveMesh(obj, dt, newMesh, newMeshValues)
+            [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = obj.DiscretizationMaintanance(dt, newMesh, newMeshValues);  %this needs to be impleemnted at solver level!! because we might need to undo solver step!!
             
-            obj.time_step_number = obj.time_step_number + 1;
-            
-            obj.time = obj.time + dt;
-            obj.time_history{obj.time_step_number} = obj.time;
-            
-            obj.DT = newMesh;
-            obj.DT_history{obj.time_step_number} = obj.DT;
-            
-            obj.density = newMeshValues;
-            obj.density_history{obj.time_step_number} = obj.density;
-            
-            obj.MeshQualityIndicators(); %for now updates quality indicator array
+            if(~forceUndoStep)  %don't commit step is must undo
+                obj.time_step_number = obj.time_step_number + 1;
+
+                obj.time = obj.time + dt;
+                obj.time_history{obj.time_step_number} = obj.time;
+                
+                if(sum(strcmp(fieldnames(newMesh), 'Constraints')))  %consistent with matlab native object
+                    obj.active_discontinuity_edges = newMesh.Constraints;           %only need to be updated when a remesh was conducted
+                end
+                obj.direction_of_mesh_faces = obj.GetTrigFaceDirections( newMesh ); %only need to be updated when a remesh was conducted
+
+                obj.DT = newMesh;
+                obj.DT_history{obj.time_step_number} = obj.DT;
+
+                obj.density = newMeshValues;
+                obj.density_history{obj.time_step_number} = obj.density;
+
+                obj.MeshQualityIndicators(); %for now updates quality indicator array
+            end
         end
         
-        function [newDT, newDensity] = MeshMaintanance(obj, DT, density)
+        function [newdt, newDT, newDensity, forceUndoStep, terminate] = DiscretizationMaintanance(obj, dt, DT, density)
             %~~~~~~~~ | mesh/discretization maintanance
             % (need to develop a strategy here)!! 1. evaluate, 2. adapt (in t, x, v), 3. propegate geneges or reset if necessary
             % adaptation strategy!! 1. resampling, 2. retriangulation 3. interpolation
             % -----
             % temp implementation for now
+            newdt = dt;
             newDT = DT;
             newDensity = density;
+            forceUndoStep = false;
+            terminate = false;
             
-            %if(triangleOverlap) ~ not implemented
+            min_dt_size = 1e-4;                 %HARD CODED VALUE!!!!!
+            min_trig_area_threshold = 1e-4;     %HARD CODED VALUE!!!!!
             
-            min_trig_area_threshold = 1e-4;
+            %-----------------------------------------------------------
+            % assume face direction flip is a neccessary condition for triangule overlap 
+            face_directions_now = obj.GetTrigFaceDirections( DT );
+            face_directions_before = obj.direction_of_mesh_faces;
+            triangleOverlap = (face_directions_now ~= face_directions_before);
+            if(sum(triangleOverlap) > 0)
+                forceUndoStep = true; 
+                newdt = dt / 2;
+                
+                
+                if(newdt < min_dt_size)
+                    terminate = true;
+                end
+                
+                return;         %NOTE: might need to revisit decision to return early from this function!!!!
+            end
+            
+            %-----------------------------------------------------------
             [ DT_trig_areas ] = obj.GetMeshAreas(DT);                               % triangle areas   
             
             if(min(DT_trig_areas) < min_trig_area_threshold)                        %too small triangles
@@ -143,8 +174,6 @@ classdef DiscreteTimeEvolvingMesh < handle
                 else
                     newDT = delaunayTriangulation(init_domain_points);
                 end
-                %-----------------| some object state updaets
-                obj.active_discontinuity_edges = newDT.Constraints;
                 
                 %-----------------| interpolate new density values
                 new_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( newDT );
@@ -364,6 +393,22 @@ classdef DiscreteTimeEvolvingMesh < handle
             trigs_x = reshape(DT.Points(DT.ConnectivityList', 1), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
             trigs_y = reshape(DT.Points(DT.ConnectivityList', 2), [3, size(DT.ConnectivityList, 1)])';   %size = (num trigs, num vert per trig)
             centroids = [mean(trigs_x, 2), mean(trigs_y, 2)];
+        end
+        
+        function [trig_face_direction] = GetTrigFaceDirections( DT )
+            %comptes direction of faces assuming trianguler grid in 2D
+            %using corss product approach.
+            
+            Pt_tail = DT.Points(DT.ConnectivityList(:, 1), :);
+            Pt_head_1 = DT.Points(DT.ConnectivityList(:, 2), :);
+            Pt_head_2 = DT.Points(DT.ConnectivityList(:, 3), :);
+            
+            trig_vect_1 = [Pt_head_1 - Pt_tail, zeros([size(Pt_head_1, 1), 1])];
+            trig_vect_2 = [Pt_head_2 - Pt_tail, zeros([size(Pt_head_1, 1), 1])];
+            
+            normals_to_trigs = cross(trig_vect_1, trig_vect_2, 2);
+            
+            trig_face_direction = sign(normals_to_trigs(:, 3));
         end
         
         function visualize_triangulation( DT_plot, density_plot )
