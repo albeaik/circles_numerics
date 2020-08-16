@@ -30,7 +30,12 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         % simulate density scaling
         density_tau = (solution_mesh.GetMeshAreas(DT_t) ./ solution_mesh.GetMeshAreas(DT_tau)) .* density_t;
 
+        % introduce the source term!!!
+        %density_tau = density_tau + sourcetermvalue(triangle_i);
+        
         %~~~~~~~~ | step user defined coupling code -----------------------
+        % NOTE: change so coupler could support solver step undo!!!!
+        % currently, solution is wrong when we do undo!
         userdef_coupler.SimulateStep(dt, PDEModel, solution_mesh);
 
         %~~~~~~~~ | commit PDE step ---------------------------------------
