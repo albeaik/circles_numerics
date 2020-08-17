@@ -173,19 +173,7 @@ classdef DiscreteTimeEvolvingMesh < handle
                 
                 %-----------------| interpolate new density values
                 new_trig_centers = DiscreteTimeEvolvingMesh.GetMeshCentroids( newDT );
-                newDensity = zeros([size(newDT.ConnectivityList, 1), 1]);
-                
-                %need to improve computational efficiency!!
-                parfor i = 1:size(newDT.ConnectivityList, 1)   %loop over all new triangles
-                    for j = 1:size(DT.ConnectivityList, 1)  %loop over all old triangles
-                        q_pt = new_trig_centers(i, :);
-                        trig_xy = DT.Points(DT.ConnectivityList(j, :), :);
-                        if(inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2)))
-                            newDensity(i) = density(j);
-                            continue;
-                        end
-                    end
-                end
+                newDensity = obj.PiecewiseConstantTrianglerMeshInterpolation(DT, density, new_trig_centers);
                 
                %-----------------| plot
                figure
@@ -405,6 +393,21 @@ classdef DiscreteTimeEvolvingMesh < handle
             normals_to_trigs = cross(trig_vect_1, trig_vect_2, 2);
             
             trig_face_direction = sign(normals_to_trigs(:, 3));
+        end
+        
+        function [interpolatedDensity] = PiecewiseConstantTrianglerMeshInterpolation(sourceMesh, sourceDensity, queryPoints)
+            interpolatedDensity = zeros([size(queryPoints, 1), 1]);
+            %need to improve computational efficiency!!
+            parfor i = 1:size(queryPoints, 1)   %loop over all new triangles
+                for j = 1:size(sourceMesh.ConnectivityList, 1)  %loop over all old triangles
+                    q_pt = queryPoints(i, :);
+                    trig_xy = sourceMesh.Points(sourceMesh.ConnectivityList(j, :), :);
+                    if(inpolygon(q_pt(1), q_pt(2), trig_xy(:, 1), trig_xy(:, 2)))
+                        interpolatedDensity(i) = sourceDensity(j);
+                        continue;
+                    end
+                end
+            end
         end
         
         function visualize_triangulation( DT_plot, density_plot )
