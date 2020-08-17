@@ -38,28 +38,30 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         % currently, solution is wrong when we do undo!
         userdef_coupler.SimulateStep(dt, PDEModel, solution_mesh);
 
-        %~~~~~~~~ | commit PDE step ---------------------------------------
-        [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = solution_mesh.EvolveMesh(dt, DT_tau, density_tau);
+        %~~~~~~~~ | discretization validation and maintanance ---------------------------------------
+        [dt_validated, DT_tau_validated, density_tau_validated, discretizationStepIsValid, deadEndFail] = solution_mesh.DiscretizationValidationAndMaintanance(dt, DT_tau, density_tau);
         
-        if(terminate)
+        if(deadEndFail)
             disp('Discretization scheme failed!!! solver terminated!')
             break;
         end
         
-        if(forceUndoStep)
-            dt = newdt;
-            continue;   %Don't advance time and don't drawing
-        end
+        if(discretizationStepIsValid)
+            %~~~~~~~~ | commit PDE step ---------------------------------------
+            solution_mesh.CommitStep(dt, DT_tau_validated, density_tau_validated);
         
-        %~~~~~~~~ | advance time stamp ------------------------------------
-        time = time + dt;
-        
-        %~~~~~~~~ | draw --> shouldn't create side effects after this line
-        if(do_realtimedraw)
-            figure(fighandle)
-            solution_mesh.VisualizeStep(-1);
-            userdef_coupler.VisualizeStep(-1);
-            drawnow
+            %~~~~~~~~ | advance time stamp ------------------------------------
+            time = time + dt;
+
+            %~~~~~~~~ | draw --> shouldn't create side effects after this line
+            if(do_realtimedraw)
+                figure(fighandle)
+                solution_mesh.VisualizeStep(-1);
+                userdef_coupler.VisualizeStep(-1);
+                drawnow
+            end
+        else    %Don't commit, advance time and don't draw
+            dt = dt_validated;
         end
     end
     

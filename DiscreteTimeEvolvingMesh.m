@@ -82,31 +82,27 @@ classdef DiscreteTimeEvolvingMesh < handle
             obj.quality_indicators_history = [0, 0, 0, 0, 0];
         end
         
-        function [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = EvolveMesh(obj, dt, newMesh, newMeshValues)
-            [newdt, newMesh, newMeshValues, forceUndoStep, terminate] = obj.DiscretizationMaintanance(dt, newMesh, newMeshValues);  %this needs to be impleemnted at solver level!! because we might need to undo solver step!!
-            
-            if(~forceUndoStep)  %don't commit step is must undo
-                obj.time_step_number = obj.time_step_number + 1;
+        function CommitStep(obj, dt, newMesh, newMeshValues)
+            obj.time_step_number = obj.time_step_number + 1;
 
-                obj.time = obj.time + dt;
-                obj.time_history{obj.time_step_number} = obj.time;
-                
-                if(sum(strcmp(fieldnames(newMesh), 'Constraints')))  %consistent with matlab native object
-                    obj.active_discontinuity_edges = newMesh.Constraints;           %only need to be updated when a remesh was conducted
-                end
-                obj.direction_of_mesh_faces = obj.GetTrigFaceDirections( newMesh ); %only need to be updated when a remesh was conducted
+            obj.time = obj.time + dt;
+            obj.time_history{obj.time_step_number} = obj.time;
 
-                obj.DT = newMesh;
-                obj.DT_history{obj.time_step_number} = obj.DT;
-
-                obj.density = newMeshValues;
-                obj.density_history{obj.time_step_number} = obj.density;
-
-                obj.MeshQualityIndicators(); %for now updates quality indicator array
+            if(sum(strcmp(fieldnames(newMesh), 'Constraints')))  %consistent with matlab native object
+                obj.active_discontinuity_edges = newMesh.Constraints;           %only need to be updated when a remesh was conducted
             end
+            obj.direction_of_mesh_faces = obj.GetTrigFaceDirections( newMesh ); %only need to be updated when a remesh was conducted
+
+            obj.DT = newMesh;
+            obj.DT_history{obj.time_step_number} = obj.DT;
+
+            obj.density = newMeshValues;
+            obj.density_history{obj.time_step_number} = obj.density;
+
+            obj.MeshQualityIndicators(); %for now updates quality indicator array
         end
         
-        function [newdt, newDT, newDensity, forceUndoStep, terminate] = DiscretizationMaintanance(obj, dt, DT, density)
+        function [newdt, newDT, newDensity, stepIsValid, deadEndFail] = DiscretizationValidationAndMaintanance(obj, dt, DT, density)
             %~~~~~~~~ | mesh/discretization maintanance
             % (need to develop a strategy here)!! 1. evaluate, 2. adapt (in t, x, v), 3. propegate geneges or reset if necessary
             % adaptation strategy!! 1. resampling, 2. retriangulation 3. interpolation
@@ -115,8 +111,8 @@ classdef DiscreteTimeEvolvingMesh < handle
             newdt = dt;
             newDT = DT;
             newDensity = density;
-            forceUndoStep = false;
-            terminate = false;
+            stepIsValid = true;                     %new discretization is valid (either with or without maintanance)
+            deadEndFail = false;                    %discretization is invaid and can't be fixed!
             
             min_dt_size = 1e-4;                 %HARD CODED VALUE!!!!!
             min_trig_area_threshold = 1e-4;     %HARD CODED VALUE!!!!!
@@ -127,12 +123,12 @@ classdef DiscreteTimeEvolvingMesh < handle
             face_directions_before = obj.direction_of_mesh_faces;
             triangleOverlap = (face_directions_now ~= face_directions_before);
             if(sum(triangleOverlap) > 0)
-                forceUndoStep = true; 
+                stepIsValid = false; 
                 newdt = dt / 2;
                 
                 
                 if(newdt < min_dt_size)
-                    terminate = true;
+                    deadEndFail = true;
                 end
                 
                 return;         %NOTE: might need to revisit decision to return early from this function!!!!
