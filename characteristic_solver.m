@@ -34,6 +34,9 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         %density_tau = density_tau + sourcetermvalue(triangle_i);
 
         %~~~~~~~~ | discretization validation and maintanance ---------------------------------------
+        % current implementation of mesh and time refinemens are improper!!
+        % need proper considerations for two step flow paths: step ok, step
+        % redo..
         [dt_validated, DT_tau_validated, density_tau_validated, discretizationStepIsValid, deadEndFail] = solution_mesh.DiscretizationValidationAndMaintanance(dt, DT_tau, density_tau);
         
         if(deadEndFail)
