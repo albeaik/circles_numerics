@@ -32,11 +32,6 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
 
         % introduce the source term!!!
         %density_tau = density_tau + sourcetermvalue(triangle_i);
-        
-        %~~~~~~~~ | step user defined coupling code -----------------------
-        % NOTE: change so coupler could support solver step undo!!!!
-        % currently, solution is wrong when we do undo!
-        userdef_coupler.SimulateStep(dt, PDEModel, solution_mesh);
 
         %~~~~~~~~ | discretization validation and maintanance ---------------------------------------
         [dt_validated, DT_tau_validated, density_tau_validated, discretizationStepIsValid, deadEndFail] = solution_mesh.DiscretizationValidationAndMaintanance(dt, DT_tau, density_tau);
@@ -47,6 +42,10 @@ function [solution] = characteristic_solver(solution_obj, dt, T, PDEModel, user_
         end
         
         if(discretizationStepIsValid)
+            %~~~~~~~~ | step user defined coupling code -----------------------
+            % Question: do we care about the precise order when this coupler code is executed? before/after remesh, etc?
+            userdef_coupler.SimulateStep(dt, PDEModel, solution_mesh);
+        
             %~~~~~~~~ | commit PDE step ---------------------------------------
             solution_mesh.CommitStep(dt, DT_tau_validated, density_tau_validated);
         
